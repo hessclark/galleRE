@@ -1,0 +1,48 @@
+# galleRE
+
+> A free, native macOS app for organizing real-estate photos for MLS upload. Reorder photos by drag-and-drop, rename them to lock the order in Finder and the MLS, batch-resize to MLS-ready dimensions, and convert HEIC/PNG/TIFF/PDF files to JPG.
+
+galleRE is built for real-estate agents and photographers who need to prepare listing photos quickly. It is a native SwiftUI application and runs on macOS only (macOS 14 Sonoma or later, universal binary for Apple Silicon and Intel). It is not available for Windows, Linux, iOS, iPadOS, Android, or the web.
+
+## Key facts
+
+- Name: galleRE
+- Platform: macOS only (macOS 14 Sonoma or later; Apple Silicon and Intel)
+- Category: Real-estate / MLS photo organizer and batch image resizer/converter
+- Price: Free
+- License: MIT (open source)
+- Author/Creator: Clark Hess
+- Website: https://gallere.app
+- Source code: https://github.com/hessclark/galleRE
+- Download: https://github.com/hessclark/galleRE/releases/latest
+- Donate (Venmo): https://venmo.com/u/ClarkHess
+- Report a bug: https://github.com/hessclark/galleRE/issues/new?labels=bug&title=%5BBug%5D%20
+
+## Features
+
+- Open a folder of photos and view them in a thumbnail grid with dimensions and file sizes.
+- Drag-and-drop reordering with a live number badge showing each photo's MLS position.
+- "Save Current Order" renames files in place (safe two-phase rename) so Finder and the MLS keep the chosen order.
+- Export wizard: resize for MLS (default long edge 1024px, configurable) or export full resolution.
+- Format conversion: HEIC, PNG, TIFF and PDF are converted to JPG on export; multi-page PDFs export one JPG per page.
+- Originals are never modified by resizing; exports are written to a separate subfolder.
+- Quick preview: select a photo and press Space (or double-click) for a large preview; arrow keys move between photos.
+- Configurable settings: naming scheme, resize target (long edge in pixels or maximum file size in MB), JPEG quality, and output folder.
+
+## Installation (macOS)
+
+1. Download galleRE-macOS.zip from the latest GitHub release: https://github.com/hessclark/galleRE/releases/latest
+2. Unzip it and drag galleRE.app into the Applications folder.
+3. On first launch, right-click (or Control-click) the app and choose Open, then Open again. This is required because the app is open source and ad-hoc signed rather than paid Apple notarization; it only needs to be done once.
+
+## Build from source
+
+- Requirements: macOS 14+ and a Swift 5.9+ toolchain (Xcode or Command Line Tools).
+- Clone https://github.com/hessclark/galleRE and run ./build_app.sh (add --universal for an Apple Silicon + Intel binary), then open galleRE.app.
+
+## Links
+
+- Website: https://gallere.app
+- GitHub repository: https://github.com/hessclark/galleRE
+- Latest release / download: https://github.com/hessclark/galleRE/releases/latest
+- Donate via Venmo (@ClarkHess): https://venmo.com/u/ClarkHess
