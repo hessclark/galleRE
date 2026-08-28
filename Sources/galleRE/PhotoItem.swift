@@ -41,40 +41,54 @@ final class PhotoItem: Identifiable, ObservableObject {
             }
             return
         }
-        if let src = CGImageSourceCreateWithURL(url as CFURL, nil),
-           let props = CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as? [CFString: Any] {
-            let w = (props[kCGImagePropertyPixelWidth] as? CGFloat) ?? 0
-            let h = (props[kCGImagePropertyPixelHeight] as? CGFloat) ?? 0
-            // account for EXIF orientation (5-8 swap dimensions)
-            let orientation = (props[kCGImagePropertyOrientation] as? Int) ?? 1
-            if orientation >= 5 {
-                pixelSize = CGSize(width: h, height: w)
-            } else {
-                pixelSize = CGSize(width: w, height: h)
+        autoreleasepool {
+            if let src = CGImageSourceCreateWithURL(url as CFURL, nil),
+               let props = CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as? [CFString: Any] {
+                let w = (props[kCGImagePropertyPixelWidth] as? CGFloat) ?? 0
+                let h = (props[kCGImagePropertyPixelHeight] as? CGFloat) ?? 0
+                // account for EXIF orientation (5-8 swap dimensions)
+                let orientation = (props[kCGImagePropertyOrientation] as? Int) ?? 1
+                if orientation >= 5 {
+                    pixelSize = CGSize(width: h, height: w)
+                } else {
+                    pixelSize = CGSize(width: w, height: h)
+                }
             }
         }
     }
 
     /// Loads a downscaled thumbnail off the main thread.
+    /// Bounded queue so opening a large folder can't spawn hundreds of
+    /// concurrent decodes (which exhausts memory/threads and crashes).
+    private static let thumbQueue: OperationQueue = {
+        let q = OperationQueue()
+        q.maxConcurrentOperationCount = 3
+        q.qualityOfService = .userInitiated
+        return q
+    }()
+
     func loadThumbnail(maxPixel: CGFloat = 400) {
+        guard thumbnail == nil else { return }
         let url = self.url
         let pdf = isPDF
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            let cg: CGImage?
-            if pdf {
-                cg = ImageProcessor.renderPDF(url, page: 1, maxPixel: maxPixel)
-            } else {
-                let opts: [CFString: Any] = [
-                    kCGImageSourceCreateThumbnailFromImageAlways: true,
-                    kCGImageSourceCreateThumbnailWithTransform: true,
-                    kCGImageSourceThumbnailMaxPixelSize: maxPixel
-                ]
-                cg = CGImageSourceCreateWithURL(url as CFURL, nil)
-                    .flatMap { CGImageSourceCreateThumbnailAtIndex($0, 0, opts as CFDictionary) }
+        PhotoItem.thumbQueue.addOperation { [weak self] in
+            autoreleasepool {
+                let cg: CGImage?
+                if pdf {
+                    cg = ImageProcessor.renderPDF(url, page: 1, maxPixel: maxPixel)
+                } else {
+                    let opts: [CFString: Any] = [
+                        kCGImageSourceCreateThumbnailFromImageAlways: true,
+                        kCGImageSourceCreateThumbnailWithTransform: true,
+                        kCGImageSourceThumbnailMaxPixelSize: maxPixel
+                    ]
+                    cg = CGImageSourceCreateWithURL(url as CFURL, nil)
+                        .flatMap { CGImageSourceCreateThumbnailAtIndex($0, 0, opts as CFDictionary) }
+                }
+                guard let cg else { return }
+                let img = NSImage(cgImage: cg, size: NSSize(width: cg.width, height: cg.height))
+                DispatchQueue.main.async { self?.thumbnail = img }
             }
-            guard let cg else { return }
-            let img = NSImage(cgImage: cg, size: NSSize(width: cg.width, height: cg.height))
-            DispatchQueue.main.async { self?.thumbnail = img }
         }
     }
 

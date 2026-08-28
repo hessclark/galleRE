@@ -1,7 +1,36 @@
 import SwiftUI
+import ImageIO
+import CoreGraphics
 
 /// Large preview overlay with prev/next navigation, like Finder Quick Look.
 struct PreviewView: View {
+    // Screen-sized decode cap and a shared decoded-image cache.
+    private static let maxPreviewPixel: CGFloat = 2560
+    private static let cache: NSCache<NSURL, NSImage> = {
+        let c = NSCache<NSURL, NSImage>(); c.countLimit = 24; return c
+    }()
+
+    /// Fast, screen-sized decode via ImageIO (orientation-aware), cached.
+    private static func previewImage(for url: URL) -> NSImage? {
+        if let cached = cache.object(forKey: url as NSURL) { return cached }
+        return autoreleasepool {
+            let opts: [CFString: Any] = [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceThumbnailMaxPixelSize: maxPreviewPixel
+            ]
+            guard let src = CGImageSourceCreateWithURL(url as CFURL, nil),
+                  let cg = CGImageSourceCreateThumbnailAtIndex(src, 0, opts as CFDictionary)
+            else {
+                let img = NSImage(contentsOf: url)
+                if let img { cache.setObject(img, forKey: url as NSURL) }
+                return img
+            }
+            let img = NSImage(cgImage: cg, size: NSSize(width: cg.width, height: cg.height))
+            cache.setObject(img, forKey: url as NSURL)
+            return img
+        }
+    }
     @EnvironmentObject var store: PhotoStore
     @Binding var currentID: UUID?
     @Binding var isPresented: Bool
@@ -109,16 +138,42 @@ struct PreviewView: View {
     }
 
     private func load() {
-        guard let url = currentItem?.url else { return }
-        loading = true
-        fullImage = nil
+        guard let item = currentItem else { return }
+        let url = item.url
+
+        // If already decoded, show instantly with no spinner.
+        if let cached = Self.cache.object(forKey: url as NSURL) {
+            fullImage = cached
+            loading = false
+            prefetchNeighbors()
+            return
+        }
+
+        // Show the small grid thumbnail immediately as a placeholder, then swap.
+        fullImage = item.thumbnail
+        loading = item.thumbnail == nil
         DispatchQueue.global(qos: .userInitiated).async {
-            let img = NSImage(contentsOf: url)
+            let img = Self.previewImage(for: url)
             DispatchQueue.main.async {
                 if self.currentItem?.url == url {
                     self.fullImage = img
                     self.loading = false
                 }
+                self.prefetchNeighbors()
+            }
+        }
+    }
+
+    /// Warm the cache for the previous/next photos so arrow navigation is instant.
+    private func prefetchNeighbors() {
+        guard let i = currentIndex else { return }
+        for offset in [-1, 1, 2, -2] {
+            let n = i + offset
+            guard store.items.indices.contains(n) else { continue }
+            let url = store.items[n].url
+            if Self.cache.object(forKey: url as NSURL) != nil { continue }
+            DispatchQueue.global(qos: .utility).async {
+                _ = Self.previewImage(for: url)
             }
         }
     }
