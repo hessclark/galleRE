@@ -5,7 +5,8 @@ struct ContentView: View {
     @EnvironmentObject var store: PhotoStore
     @ObservedObject var settings = AppSettings.shared
     @State private var draggingID: UUID?
-    @State private var selectedID: UUID?
+    @State private var selection: Set<UUID> = []
+    @State private var anchorID: UUID?        // most recent click, for range-select & preview
     @State private var previewID: UUID?
     @State private var showPreview = false
     @State private var thumbScale: Double = 160
@@ -13,6 +14,7 @@ struct ContentView: View {
     @State private var showHelp = false
     @State private var showExport = false
     @State private var showAbout = false
+    @State private var showLimitEditor = false
     @AppStorage("hasSeenHelp") private var hasSeenHelp = false
     @AppStorage("dragHintDismissed") private var dragHintDismissed = false
 
@@ -64,9 +66,36 @@ struct ContentView: View {
 
     private func openPreview(_ id: UUID?) {
         guard let id else { return }
-        selectedID = id
+        selectSingle(id)
         previewID = id
         showPreview = true
+    }
+
+    // MARK: Selection
+
+    private func selectSingle(_ id: UUID) {
+        selection = [id]; anchorID = id
+    }
+    private func toggle(_ id: UUID) {
+        if selection.contains(id) { selection.remove(id) } else { selection.insert(id) }
+        anchorID = id
+    }
+    private func selectRange(to id: UUID) {
+        guard let anchor = anchorID,
+              let a = store.items.firstIndex(where: { $0.id == anchor }),
+              let b = store.items.firstIndex(where: { $0.id == id }) else { selectSingle(id); return }
+        let lo = min(a, b), hi = max(a, b)
+        selection = Set(store.items[lo...hi].map { $0.id })
+    }
+    private func selectAll() { selection = Set(store.items.map { $0.id }) }
+    private func clearSelection() { selection = []; anchorID = nil }
+
+    /// Items to act on for a bulk action: the selection, or the anchor if selection is empty.
+    private var actionTargets: [PhotoItem] {
+        if selection.isEmpty {
+            return store.items.filter { $0.id == anchorID }
+        }
+        return store.items.filter { selection.contains($0.id) }
     }
 
     // Rank among included photos (1-based); nil for excluded.
@@ -85,9 +114,9 @@ struct ContentView: View {
 
     private func moveSelection(_ delta: Int) {
         guard !store.items.isEmpty else { return }
-        let current = store.items.firstIndex { $0.id == selectedID } ?? -1
+        let current = store.items.firstIndex { $0.id == anchorID } ?? -1
         let next = min(max(current + delta, 0), store.items.count - 1)
-        selectedID = store.items[next].id
+        selectSingle(store.items[next].id)
     }
 
     // MARK: Toolbar
@@ -119,16 +148,6 @@ struct ContentView: View {
                 .disabled(store.items.isEmpty || store.isBusy)
 
                 Button {
-                    if let id = selectedID, let item = store.items.first(where: { $0.id == id }) {
-                        store.toggleWatermark(item)
-                    }
-                } label: {
-                    Label("Watermark", systemImage: "textformat.size")
-                }
-                .help("Toggle the watermark on the selected photo (configure text in Settings)")
-                .disabled(selectedID == nil || store.isBusy)
-
-                Button {
                     showExport = true
                 } label: {
                     Label("Export…", systemImage: "square.and.arrow.up")
@@ -140,8 +159,8 @@ struct ContentView: View {
 
             Spacer()
 
-            if store.folderURL != nil, settings.maxPhotos > 0 {
-                countPill
+            if store.folderURL != nil {
+                limitControl
             }
 
             if store.folderURL != nil {
@@ -165,6 +184,7 @@ struct ContentView: View {
             .help("Help & tutorial")
         }
         .padding(10)
+        .background(Brand.barWash)
     }
 
     // MARK: Content
@@ -181,7 +201,9 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
           VStack(spacing: 0) {
-            if !dragHintDismissed && store.items.count > 1 {
+            if !selection.isEmpty {
+                selectionBar
+            } else if !dragHintDismissed && store.items.count > 1 {
                 dragHintBanner
             }
             ScrollView {
@@ -190,14 +212,16 @@ struct ContentView: View {
                         PhotoCell(item: item,
                                   includedRank: includedRanks[item.id],
                                   isOverLimit: isOverLimit(item),
-                                  isSelected: selectedID == item.id,
+                                  isSelected: selection.contains(item.id),
                                   store: store)
                             .opacity(draggingID == item.id ? 0.35 : 1)
                             .onTapGesture(count: 2) { openPreview(item.id) }
-                            .onTapGesture { selectedID = item.id }
+                            .highPriorityGesture(TapGesture().modifiers(.command).onEnded { toggle(item.id) })
+                            .highPriorityGesture(TapGesture().modifiers(.shift).onEnded { selectRange(to: item.id) })
+                            .onTapGesture { selectSingle(item.id) }
                             .onDrag {
                                 draggingID = item.id
-                                selectedID = item.id
+                                if !selection.contains(item.id) { selectSingle(item.id) }
                                 return NSItemProvider(object: item.id.uuidString as NSString)
                             }
                             .onDrop(of: [UTType.text], delegate: ReorderDropDelegate(
@@ -209,38 +233,115 @@ struct ContentView: View {
             .focusable()
             .focusEffectDisabled()
             .onKeyPress(.space) {
-                openPreview(selectedID ?? store.items.first?.id)
+                openPreview(anchorID ?? store.items.first?.id)
                 return .handled
             }
             .onKeyPress(.leftArrow)  { moveSelection(-1); return .handled }
             .onKeyPress(.rightArrow) { moveSelection(1);  return .handled }
             .onKeyPress(.return) {
-                openPreview(selectedID ?? store.items.first?.id)
+                openPreview(anchorID ?? store.items.first?.id)
                 return .handled
+            }
+            .onKeyPress(.escape) { clearSelection(); return .handled }
+            .onKeyPress(keys: ["a"]) { press in
+                if press.modifiers.contains(.command) { selectAll(); return .handled }
+                return .ignored
             }
           }
         }
     }
 
+    // MARK: Selection / bulk-action bar
+
+    private var selectionBar: some View {
+        HStack(spacing: 12) {
+            Text("\(selection.count) selected").font(.callout.weight(.semibold))
+            Divider().frame(height: 18)
+            Button { store.setWatermark(ids: selection, on: true) } label: {
+                Label("Watermark", systemImage: "textformat.size")
+            }
+            Button { store.setWatermark(ids: selection, on: false) } label: {
+                Label("Remove WM", systemImage: "textformat.size.smaller")
+            }
+            Divider().frame(height: 18)
+            Button { store.setIncluded(ids: selection, on: true) } label: {
+                Label("Include", systemImage: "eye.fill")
+            }
+            Button { store.setIncluded(ids: selection, on: false) } label: {
+                Label("Exclude", systemImage: "eye.slash.fill")
+            }
+            Spacer()
+            Button("Select All") { selectAll() }
+            Button { clearSelection() } label: { Label("Done", systemImage: "xmark.circle.fill") }
+                .labelStyle(.iconOnly)
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .padding(.horizontal, 14).padding(.vertical, 8)
+        .background(Brand.gradient.opacity(0.14))
+        .overlay(alignment: .bottom) { Divider() }
+    }
+
+    // Clickable MLS-limit control: a pill when a limit is set, else a subtle "Set limit" chip.
     @ViewBuilder
-    private var countPill: some View {
+    private var limitControl: some View {
+        Button { showLimitEditor = true } label: {
+            if settings.maxPhotos > 0 { countPillLabel } else {
+                Label("Set MLS limit", systemImage: "number")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(.plain)
+        .popover(isPresented: $showLimitEditor, arrowEdge: .bottom) { limitEditor }
+    }
+
+    private var limitEditor: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("MLS photo limit").font(.headline)
+            HStack {
+                Stepper(value: $settings.maxPhotos, in: 0...200) {
+                    Text(settings.maxPhotos == 0 ? "No limit" : "\(settings.maxPhotos) photos")
+                        .monospacedDigit()
+                }
+            }
+            HStack(spacing: 6) {
+                ForEach([0, 24, 25, 36, 50], id: \.self) { n in
+                    Button(n == 0 ? "None" : "\(n)") { settings.maxPhotos = n }
+                        .buttonStyle(.bordered).controlSize(.small)
+                        .tint(settings.maxPhotos == n ? .brand : nil)
+                }
+            }
+            if settings.maxPhotos > 0 && store.includedCount > settings.maxPhotos {
+                Divider()
+                Button {
+                    store.trimToLimit(); showLimitEditor = false
+                } label: {
+                    Label("Trim to \(settings.maxPhotos) (exclude \(store.includedCount - settings.maxPhotos))",
+                          systemImage: "scissors")
+                }
+                .buttonStyle(.borderedProminent).tint(.orange)
+            }
+            Text("Common MLS caps are 24–50. The pill shows your included count vs. this limit.")
+                .font(.caption).foregroundStyle(.secondary).frame(width: 240)
+        }
+        .padding(16)
+    }
+
+    @ViewBuilder
+    private var countPillLabel: some View {
         let count = store.includedCount
         let max = settings.maxPhotos
         let over = count > max
         HStack(spacing: 8) {
             Image(systemName: over ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
             Text("\(count) / \(max)").monospacedDigit()
-            if over {
-                Button("Trim") { store.trimToLimit() }
-                    .buttonStyle(.borderedProminent).controlSize(.small).tint(.orange)
-                    .help("Exclude photos beyond the MLS limit")
-            }
+            if over { Image(systemName: "chevron.down").font(.caption2) }
         }
         .font(.callout.weight(.semibold))
         .foregroundStyle(over ? .orange : .green)
         .padding(.horizontal, 10).padding(.vertical, 5)
         .background((over ? Color.orange : Color.green).opacity(0.12), in: Capsule())
-        .help(over ? "\(count - max) over the MLS limit of \(max)" : "Within the MLS limit of \(max)")
+        .help(over ? "\(count - max) over the MLS limit of \(max) — click to adjust or trim" : "Within the MLS limit of \(max) — click to change")
     }
 
     private var dragHintBanner: some View {

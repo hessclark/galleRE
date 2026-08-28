@@ -116,6 +116,8 @@ final class PhotoStore: ObservableObject {
     func toggleWatermark(_ item: PhotoItem) { item.watermarked.toggle(); objectWillChange.send() }
     func setWatermarkAll(_ on: Bool) { items.forEach { $0.watermarked = on }; objectWillChange.send() }
     func setIncludedAll(_ on: Bool) { items.forEach { $0.included = on }; objectWillChange.send() }
+    func setWatermark(ids: Set<UUID>, on: Bool) { items.filter { ids.contains($0.id) }.forEach { $0.watermarked = on }; objectWillChange.send() }
+    func setIncluded(ids: Set<UUID>, on: Bool) { items.filter { ids.contains($0.id) }.forEach { $0.included = on }; objectWillChange.send() }
 
     /// Exclude every included photo ranked beyond the MLS max (0 = no limit).
     func trimToLimit() {

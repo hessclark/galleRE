@@ -16,7 +16,7 @@ struct HelpView: View {
               detail: "Thumbnails load in a grid — JPEG, PNG, HEIC, TIFF and PDF."),
         .init(icon: "hand.draw",
               title: "Drag to reorder",
-              detail: "The number badge shows each photo's MLS position. Press Space to preview."),
+              detail: "The number badge shows each photo's MLS position. ⌘-click or ⇧-click to select several for bulk actions; press Space to preview."),
         .init(icon: "textformat.123",
               title: "Save Current Order",
               detail: "Renames files in place so Finder and the MLS keep your order."),
