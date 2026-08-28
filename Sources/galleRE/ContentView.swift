@@ -11,7 +11,10 @@ struct ContentView: View {
     @State private var thumbScale: Double = 160
     @State private var showSettings = false
     @State private var showHelp = false
+    @State private var showExport = false
+    @State private var showAbout = false
     @AppStorage("hasSeenHelp") private var hasSeenHelp = false
+    @AppStorage("dragHintDismissed") private var dragHintDismissed = false
 
     private var columns: [GridItem] {
         [GridItem(.adaptive(minimum: thumbScale, maximum: thumbScale * 1.4), spacing: 12)]
@@ -32,6 +35,12 @@ struct ContentView: View {
         .sheet(isPresented: $showHelp) {
             HelpView()
         }
+        .sheet(isPresented: $showExport) {
+            ExportWizardView().environmentObject(store)
+        }
+        .sheet(isPresented: $showAbout) {
+            AboutView()
+        }
         .onAppear {
             if !hasSeenHelp {
                 hasSeenHelp = true
@@ -40,6 +49,9 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .showHelp)) { _ in
             showHelp = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .showAbout)) { _ in
+            showAbout = true
         }
         .overlay {
             if showPreview {
@@ -93,19 +105,11 @@ struct ContentView: View {
                 .disabled(store.items.isEmpty || store.isBusy)
 
                 Button {
-                    Task { await store.exportOriginals() }
+                    showExport = true
                 } label: {
-                    Label("Export Full-Size", systemImage: "square.and.arrow.up")
+                    Label("Export…", systemImage: "square.and.arrow.up")
                 }
-                .help("Copy full-resolution photos, renamed in order, to the export subfolder")
-                .disabled(store.items.isEmpty || store.isBusy)
-
-                Button {
-                    Task { await store.resizeAndExport() }
-                } label: {
-                    Label("Resize for MLS", systemImage: "arrow.down.right.and.arrow.up.left")
-                }
-                .help("Write downsized JPEGs (per Settings), renamed in order, to the export subfolder")
+                .help("Open the export wizard: resize, convert, rename and export")
                 .buttonStyle(.borderedProminent)
                 .disabled(store.items.isEmpty || store.isBusy)
             }
@@ -148,6 +152,10 @@ struct ContentView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
+          VStack(spacing: 0) {
+            if !dragHintDismissed && store.items.count > 1 {
+                dragHintBanner
+            }
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 12) {
                     ForEach(Array(store.items.enumerated()), id: \.element.id) { index, item in
@@ -178,7 +186,29 @@ struct ContentView: View {
                 openPreview(selectedID ?? store.items.first?.id)
                 return .handled
             }
+          }
         }
+    }
+
+    private var dragHintBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "hand.draw.fill")
+                .foregroundStyle(.tint)
+                .symbolEffect(.pulse, options: .repeating)
+            Text("Drag any photo to reorder. The number badge shows its MLS position — then click **Save Current Order** to lock it in.")
+                .font(.callout)
+            Spacer()
+            Button {
+                withAnimation { dragHintDismissed = true }
+            } label: {
+                Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Dismiss")
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .background(.tint.opacity(0.10))
+        .overlay(alignment: .bottom) { Divider() }
     }
 
     private var emptyState: some View {
@@ -230,6 +260,7 @@ struct PhotoCell: View {
     @ObservedObject var item: PhotoItem
     let order: Int
     var isSelected: Bool = false
+    @State private var hovering = false
 
     var body: some View {
         VStack(spacing: 4) {
@@ -254,6 +285,18 @@ struct PhotoCell: View {
                     .background(.black.opacity(0.65), in: Capsule())
                     .foregroundStyle(.white)
                     .padding(6)
+
+                // Drag affordance: a grab handle that appears on hover.
+                Image(systemName: "arrow.up.and.down.and.arrow.left.and.right")
+                    .font(.caption.weight(.bold))
+                    .padding(6)
+                    .background(.black.opacity(0.55), in: Circle())
+                    .foregroundStyle(.white)
+                    .padding(6)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .opacity(hovering ? 1 : 0)
+                    .animation(.easeInOut(duration: 0.15), value: hovering)
+                    .allowsHitTesting(false)
             }
             Text(item.fileName)
                 .font(.caption2).lineLimit(1).truncationMode(.middle)
@@ -266,6 +309,10 @@ struct PhotoCell: View {
             RoundedRectangle(cornerRadius: 10)
                 .strokeBorder(Color.accentColor, lineWidth: isSelected ? 3 : 0)
         )
+        .onHover { h in
+            hovering = h
+            if h { NSCursor.openHand.push() } else { NSCursor.pop() }
+        }
     }
 }
 

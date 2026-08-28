@@ -70,6 +70,17 @@ struct HelpView: View {
                     Text("Tip: your originals are never modified by resizing — exports always go to a separate subfolder. \"Save Current Order\" is the only action that renames files in place.")
                         .font(.callout).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
+
+                    Divider().padding(.vertical, 4)
+                    HStack(spacing: 6) {
+                        Text("Created by **Clark Hess**  ·  free & open source (MIT)")
+                            .font(.caption).foregroundStyle(.secondary)
+                        Spacer()
+                        Link("GitHub", destination: URL(string: "https://github.com/hessclark/galleRE")!)
+                            .font(.caption)
+                        Link("Donate 💜", destination: URL(string: "https://venmo.com/u/ClarkHess")!)
+                            .font(.caption)
+                    }
                 }
                 .padding()
             }

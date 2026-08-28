@@ -101,24 +101,24 @@ final class PhotoStore: ObservableObject {
 
     // MARK: - Export (resize)
 
-    /// Resize to the MLS target and write renamed copies to the export subfolder.
-    func resizeAndExport() async {
-        await runExport(resize: true, verb: "Resizing")
+    struct ExportOptions {
+        var resize: Bool          // true = downscale to MLS target; false = full resolution
+        var convertToJPG: Bool    // for full-res raster: re-encode to JPG (PDFs always convert)
     }
 
-    /// Write full-resolution renamed copies to the export subfolder (no downscaling).
-    func exportOriginals() async {
-        await runExport(resize: false, verb: "Exporting")
-    }
+    @Published var lastExportDir: URL?
 
-    private func runExport(resize: Bool, verb: String) async {
+    /// Run an export using the given options. Settings (dimensions, naming, folder) come from AppSettings.
+    func export(options: ExportOptions) async {
         guard let folderURL, !items.isEmpty else { return }
         isBusy = true
+        let verb = options.resize ? "Resizing" : "Exporting"
         statusMessage = "\(verb)…"
         let settings = self.settings
         let snapshot = items
         let outputDir = folderURL.appendingPathComponent(settings.exportFolderName, isDirectory: true)
         try? FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
+        lastExportDir = outputDir
 
         // If renaming in place, rename originals first so both stay in sync.
         if settings.outputMode == .inPlace {
@@ -126,7 +126,10 @@ final class PhotoStore: ObservableObject {
         }
 
         let total = snapshot.count
+        let resize = options.resize
+        let convert = options.convertToJPG
         var savedBytes = 0
+        var fileCount = 0
         var done = 0
 
         await Task.detached(priority: .userInitiated) {
@@ -143,35 +146,44 @@ final class PhotoStore: ObservableObject {
                         let dest = outputDir.appendingPathComponent("\(base)\(suffix).jpg")
                         if let result = try? ImageProcessor.processPDFPage(
                             source: item.url, page: p, destURL: dest, settings: settings, resize: resize) {
-                            // count the source size only once, on the first page
                             savedBytes += (p == 1 ? result.originalBytes : 0) - result.newBytes
+                            fileCount += 1
                         }
                     }
                 } else if resize {
                     let dest = outputDir.appendingPathComponent("\(base).jpg")
                     if let result = try? ImageProcessor.process(source: item.url, destURL: dest, settings: settings) {
                         savedBytes += (result.originalBytes - result.newBytes)
+                        fileCount += 1
+                    }
+                } else if convert {
+                    // full resolution, re-encoded to JPG
+                    let dest = outputDir.appendingPathComponent("\(base).jpg")
+                    if let result = try? ImageProcessor.processFullSizeJPEG(
+                        source: item.url, destURL: dest, quality: settings.jpegQuality) {
+                        savedBytes += (result.originalBytes - result.newBytes)
+                        fileCount += 1
                     }
                 } else {
                     // full-size copy, keeping the original extension
                     let ext = item.url.pathExtension.isEmpty ? "jpg" : item.url.pathExtension
                     let dest = outputDir.appendingPathComponent("\(base).\(ext)")
                     try? FileManager.default.removeItem(at: dest)
-                    try? FileManager.default.copyItem(at: item.url, to: dest)
+                    if (try? FileManager.default.copyItem(at: item.url, to: dest)) != nil {
+                        fileCount += 1
+                    }
                 }
                 done += 1
                 let d = done
-                await MainActor.run {
-                    self.statusMessage = "\(verb) \(d)/\(total)…"
-                }
+                await MainActor.run { self.statusMessage = "\(verb) \(d)/\(total)…" }
             }
         }.value
 
         if resize {
             let saved = ByteCountFormatter.string(fromByteCount: Int64(max(0, savedBytes)), countStyle: .file)
-            statusMessage = "Resized \(total) photo\(total == 1 ? "" : "s") to \(settings.exportFolderName)  (saved \(saved))"
+            statusMessage = "Exported \(fileCount) file\(fileCount == 1 ? "" : "s") to \(settings.exportFolderName)  ·  saved \(saved)"
         } else {
-            statusMessage = "Exported \(total) full-size photo\(total == 1 ? "" : "s") to \(settings.exportFolderName)"
+            statusMessage = "Exported \(fileCount) file\(fileCount == 1 ? "" : "s") to \(settings.exportFolderName)"
         }
         isBusy = false
     }

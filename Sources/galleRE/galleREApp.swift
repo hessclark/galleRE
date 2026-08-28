@@ -2,6 +2,7 @@ import SwiftUI
 
 extension Notification.Name {
     static let showHelp = Notification.Name("gallere.showHelp")
+    static let showAbout = Notification.Name("gallere.showAbout")
 }
 
 @main
@@ -15,6 +16,11 @@ struct galleREApp: App {
         }
         .windowStyle(.titleBar)
         .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("About galleRE") {
+                    NotificationCenter.default.post(name: .showAbout, object: nil)
+                }
+            }
             CommandGroup(replacing: .newItem) {}
             CommandGroup(replacing: .help) {
                 Button("galleRE Tutorial") {

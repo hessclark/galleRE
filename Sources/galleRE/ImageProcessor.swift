@@ -60,6 +60,17 @@ enum ImageProcessor {
         return Result(outputURL: destURL, originalBytes: originalBytes, newBytes: data.count)
     }
 
+    /// Encode a raster image to JPEG at full resolution (no downscaling).
+    static func processFullSizeJPEG(source: URL, destURL: URL, quality: Double) throws -> Result {
+        let originalBytes = (try? FileManager.default.attributesOfItem(atPath: source.path)[.size] as? Int) ?? 0
+        guard let img = loadImage(source, maxPixel: nil),
+              let data = encodeJPEG(img, quality: quality) else {
+            throw ProcessingError.failed(source.lastPathComponent)
+        }
+        try data.write(to: destURL, options: .atomic)
+        return Result(outputURL: destURL, originalBytes: originalBytes, newBytes: data.count)
+    }
+
     /// Iteratively reduce dimensions and quality until under the byte cap.
     private static func compressToSize(source: URL, capBytes: Int, settings: AppSettings) throws -> Data {
         // Start from full size, step the long edge down.
