@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>galleRE — Organize real-estate photos for the MLS</title>
+<meta name="description" content="A free, native macOS app to reorder, rename, and resize real-estate photos for MLS upload.">
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+  :root {
+    --grad1: #6081ff; --grad2: #7c5cea; --grad3: #6346dc;
+    --ink: #1b1b2b; --muted: #5a5a6e; --bg: #ffffff; --card: #f6f6fb;
+    --border: #e6e6ef;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --ink: #f0f0f6; --muted: #a6a6ba; --bg: #14141c; --card: #1e1e29; --border: #2c2c3a; }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+
+  header.hero {
+    text-align: center; padding: 72px 24px 56px;
+    background:
+      radial-gradient(1200px 400px at 50% -120px, rgba(124,92,234,0.18), transparent 60%);
+  }
+  .icon {
+    width: 132px; height: 132px; border-radius: 30px;
+    box-shadow: 0 18px 44px rgba(99,70,220,0.35);
+    margin-bottom: 22px;
+  }
+  h1 { font-size: clamp(2.2rem, 6vw, 3.2rem); margin: 0 0 6px; letter-spacing: -0.02em; }
+  .tagline { font-size: clamp(1.05rem, 3vw, 1.35rem); color: var(--muted); margin: 0 auto 8px; max-width: 560px; }
+  .macos-badge {
+    display: inline-block; margin-top: 14px; padding: 5px 14px; border-radius: 999px;
+    background: var(--card); border: 1px solid var(--border); color: var(--muted);
+    font-size: 0.9rem; font-weight: 600;
+  }
+
+  .cta { margin-top: 30px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
+    padding: 14px 26px; border-radius: 12px; font-weight: 700; font-size: 1.05rem;
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-primary {
+    color: #fff; background: linear-gradient(135deg, var(--grad1), var(--grad2) 55%, var(--grad3));
+    box-shadow: 0 10px 24px rgba(99,70,220,0.4);
+  }
+  .btn-ghost { color: var(--ink); background: var(--card); border: 1px solid var(--border); }
+  .sub { margin-top: 12px; font-size: 0.9rem; color: var(--muted); }
+
+  section { padding: 44px 0; border-top: 1px solid var(--border); }
+  h2 { font-size: 1.5rem; margin: 0 0 22px; }
+  .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; }
+  .feature {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px;
+  }
+  .feature .emoji { font-size: 1.5rem; }
+  .feature h3 { margin: 8px 0 4px; font-size: 1.05rem; }
+  .feature p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+
+  ol.install { padding-left: 20px; }
+  ol.install li { margin-bottom: 10px; }
+  .note {
+    background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--grad2);
+    border-radius: 10px; padding: 14px 16px; color: var(--muted); font-size: 0.95rem; margin-top: 18px;
+  }
+  .donate {
+    text-align: center; background: linear-gradient(135deg, rgba(96,129,255,0.10), rgba(124,92,234,0.10));
+    border: 1px solid var(--border); border-radius: 16px; padding: 32px 24px; margin: 8px 0;
+  }
+  .btn-donate { color: #fff; background: #ec4899; box-shadow: 0 10px 24px rgba(236,72,153,0.35); }
+
+  footer { text-align: center; color: var(--muted); font-size: 0.9rem; padding: 40px 24px 60px; }
+  footer a { color: var(--grad2); text-decoration: none; }
+  code { background: var(--card); padding: 2px 6px; border-radius: 5px; font-size: 0.9em; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <img class="icon" src="icon.png" alt="galleRE app icon">
+    <h1>galleRE</h1>
+    <p class="tagline">Organize, reorder, and resize real-estate photos for MLS upload — fast.</p>
+    <div><span class="macos-badge">🍎 macOS only · free & open source</span></div>
+    <div class="cta">
+      <a class="btn btn-primary" href="https://github.com/hessclark/galleRE/releases/latest">⬇ Download for Mac</a>
+      <a class="btn btn-ghost" href="https://github.com/hessclark/galleRE">View on GitHub</a>
+    </div>
+    <p class="sub">Universal build — Apple Silicon &amp; Intel · macOS 14 (Sonoma) or later</p>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2>What it does</h2>
+    <div class="features">
+      <div class="feature">
+        <div class="emoji">🖱️</div>
+        <h3>Drag to reorder</h3>
+        <p>Arrange photos in the exact order you want them on the MLS. A number badge shows each photo's position.</p>
+      </div>
+      <div class="feature">
+        <div class="emoji">🔢</div>
+        <h3>Save the order</h3>
+        <p>Renames files so Finder — and the MLS uploader — keep your order every time.</p>
+      </div>
+      <div class="feature">
+        <div class="emoji">🗜️</div>
+        <h3>Resize for MLS</h3>
+        <p>Batch-resize to the perfect upload size with one click. Your originals are never touched.</p>
+      </div>
+      <div class="feature">
+        <div class="emoji">🔄</div>
+        <h3>Convert formats</h3>
+        <p>HEIC, PNG, TIFF and even PDF files convert straight to MLS-ready JPG on export.</p>
+      </div>
+      <div class="feature">
+        <div class="emoji">👁️</div>
+        <h3>Quick preview</h3>
+        <p>Tap a photo and hit Space for a big preview; arrow keys flip through the set.</p>
+      </div>
+      <div class="feature">
+        <div class="emoji">⚙️</div>
+        <h3>Your settings</h3>
+        <p>Choose naming style, resize target, quality and output folder in a simple export wizard.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Install on your Mac</h2>
+    <ol class="install">
+      <li><a href="https://github.com/hessclark/galleRE/releases/latest">Download <strong>galleRE-macOS.zip</strong></a> and unzip it.</li>
+      <li>Drag <strong>galleRE.app</strong> into your <strong>Applications</strong> folder.</li>
+      <li><strong>First launch:</strong> right-click (or Control-click) the app → <strong>Open</strong> → <strong>Open</strong> again.</li>
+    </ol>
+    <div class="note">
+      <strong>Why the right-click?</strong> galleRE is open source and ad-hoc signed (not paid Apple notarization),
+      so the first time you open it macOS asks you to confirm. Right-click → <strong>Open</strong> tells your Mac you trust it —
+      you only do this once. (Or: <strong>System Settings → Privacy &amp; Security → Open Anyway</strong>.)
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="donate">
+      <h2 style="margin-top:0;">Free &amp; open source</h2>
+      <p style="color:var(--muted); max-width:520px; margin:0 auto 20px;">
+        galleRE was created by <strong>Clark Hess</strong> and released under the MIT license.
+        If it saves you time on your listings, a tip is hugely appreciated. 💜
+      </p>
+      <a class="btn btn-donate" href="https://venmo.com/u/ClarkHess">💜 Donate via Venmo · @ClarkHess</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Made by <a href="https://venmo.com/u/ClarkHess">Clark Hess</a> ·
+    <a href="https://github.com/hessclark/galleRE">Source on GitHub</a> ·
+    <a href="https://github.com/hessclark/galleRE/issues/new?labels=bug&amp;title=%5BBug%5D%20">Report a bug</a><br>
+    <span style="opacity:.7">macOS 14+ · Apple Silicon &amp; Intel · MIT License</span>
+  </div>
+</footer>
+
+</body>
+</html>
