@@ -22,10 +22,11 @@ A native macOS app: reorder by drag-and-drop, rename to lock in the order, batch
 
 **No developer tools required — just download and drag.**
 
-1. Go to the [**latest release**](https://github.com/hessclark/galleRE/releases/latest) and download **`galleRE-macOS.zip`**.
-2. Double-click the zip to unzip it (Safari may unzip it automatically). You'll get **galleRE.app**.
-3. Drag **galleRE.app** into your **Applications** folder.
-4. **First launch:** right-click (or Control-click) the app → **Open** → **Open** again in the dialog.
+1. Download **[galleRE.dmg](https://github.com/hessclark/galleRE/releases/latest/download/galleRE.dmg)** and double-click to open it.
+2. In the window that opens, **drag galleRE onto the Applications folder**.
+3. **First launch:** open Applications, right-click (or Control-click) **galleRE** → **Open** → **Open** again in the dialog.
+
+> Prefer a zip? A `galleRE-macOS.zip` is also attached to each [release](https://github.com/hessclark/galleRE/releases/latest).
 
 > **Why the right-click?** galleRE is open source and *ad-hoc signed* (not paid Apple notarization), so on first launch macOS shows *"Apple could not verify galleRE is free of malware."* Right-click → **Open** tells macOS you trust it — you only do this once. (Alternatively: **System Settings → Privacy & Security → Open Anyway**.)
 
@@ -60,10 +61,11 @@ cd galleRE
 open galleRE.app
 ```
 
-To produce a universal (Apple Silicon + Intel) bundle for distribution:
+To produce a universal (Apple Silicon + Intel) bundle for distribution, and a styled drag-to-Applications disk image:
 
 ```bash
 ./build_app.sh --universal
+./make_dmg.sh              # builds galleRE.dmg (uses dmg_background.png)
 ```
 
 `build_app.sh` compiles a release build and packages it into a double-clickable `galleRE.app` bundle (icon included). No full Xcode install required — Command Line Tools are enough.
