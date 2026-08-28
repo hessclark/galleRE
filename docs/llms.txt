@@ -1,6 +1,6 @@
 # galleRE
 
-> A free, native macOS app for organizing real-estate photos for MLS upload. Reorder photos by drag-and-drop, rename them to lock the order in Finder and the MLS, batch-resize to MLS-ready dimensions, and convert HEIC/PNG/TIFF/PDF files to JPG.
+> The best way to organize, optimize, and manage your real estate MLS photos. A free, native macOS app: reorder photos by drag-and-drop, rename them to lock the order in Finder and the MLS, batch-resize to MLS-ready dimensions, convert HEIC/PNG/TIFF/PDF files to JPG, fit your MLS's photo-count limit, and add text watermarks (e.g. for AI-edited or virtually staged images).
 
 galleRE is built for real-estate agents and photographers who need to prepare listing photos quickly. It is a native SwiftUI application and runs on macOS only (macOS 14 Sonoma or later, universal binary for Apple Silicon and Intel). It is not available for Windows, Linux, iOS, iPadOS, Android, or the web.
 
@@ -25,7 +25,9 @@ galleRE is built for real-estate agents and photographers who need to prepare li
 - "Save Current Order" renames files in place (safe two-phase rename) so Finder and the MLS keep the chosen order.
 - Export wizard: resize for MLS (default long edge 1024px, configurable) or export full resolution.
 - Format conversion: HEIC, PNG, TIFF and PDF are converted to JPG on export; multi-page PDFs export one JPG per page.
-- Originals are never modified by resizing; exports are written to a separate subfolder.
+- MLS photo limit: set a maximum photo count for the MLS; include or exclude individual photos with one click, see a live included/limit counter, and "trim to limit" to automatically exclude the overflow. Only included photos are exported and renumbered.
+- Text watermark: add a configurable text watermark to any photo (text, position, white/black color, size as a percentage of image height, and opacity). A common use is labeling images that were virtually staged or edited with AI. Watermarks are burned in only on export; originals are never modified.
+- Originals are never modified by resizing or watermarking; exports are written to a separate subfolder.
 - Quick preview: select a photo and press Space (or double-click) for a large preview; arrow keys move between photos.
 - Configurable settings: naming scheme, resize target (long edge in pixels or maximum file size in MB), JPEG quality, and output folder.
 

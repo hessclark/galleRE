@@ -2,9 +2,9 @@
 
 # galleRE
 
-**A native macOS app for organizing real-estate photos for MLS upload.**
+**The best way to organize, optimize, and manage your real estate MLS photos.**
 
-Reorder by drag-and-drop, rename to lock in the order, and batch-resize/convert to MLS-ready JPGs — all in a fast, native SwiftUI app.
+A native macOS app: reorder by drag-and-drop, rename to lock in the order, batch-resize/convert to MLS-ready JPGs, fit your MLS's photo limit, and add AI/virtual-staging watermarks — all fast and native.
 
 ![Platform: macOS only](https://img.shields.io/badge/platform-macOS%2014%2B-blue)
 ![Universal: Apple Silicon + Intel](https://img.shields.io/badge/universal-Apple%20Silicon%20%2B%20Intel-lightgrey)
@@ -41,6 +41,8 @@ Reorder by drag-and-drop, rename to lock in the order, and batch-resize/convert 
 - 🗜️ **Resize for MLS** — writes downsized JPEGs (default long edge 1024px, configurable) into an export subfolder. Originals are never touched.
 - 🖼️ **Export Full-Size** — full-resolution renamed copies, for brochures or archives.
 - 🔄 **Format conversion** — HEIC, PNG, TIFF and **PDF** files convert to JPG on export. Multi-page PDFs become one JPG per page.
+- 🔢 **Fit your MLS limit** — set your MLS's max photo count; include/exclude photos with one click and trim to fit, with a live counter.
+- 🅰️ **Watermarks** — add a text watermark (e.g. "virtually staged or edited with AI") to any photo; burned in on export, originals untouched.
 - 👁️ **Quick preview** — click a photo and press Space (or double-click) for a large preview; arrow keys flip through.
 - ⚙️ **Configurable** — naming scheme, resize target (long edge or max file size), JPEG quality, and output location.
 

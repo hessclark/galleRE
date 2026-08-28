@@ -81,7 +81,7 @@ struct HelpView: View {
                 .shadow(color: .black.opacity(0.18), radius: 6, y: 3)
             VStack(alignment: .leading, spacing: 3) {
                 Text("Welcome to galleRE").font(.title2.bold())
-                Text("Order, rename, and resize property photos for the MLS.")
+                Text("The best way to organize, optimize, and manage your real estate MLS photos.")
                     .font(.callout).foregroundStyle(.secondary)
             }
             Spacer()
