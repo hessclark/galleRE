@@ -24,8 +24,11 @@ A native macOS app: reorder by drag-and-drop, rename to lock in the order, batch
 
 1. Download **[galleRE.dmg](https://github.com/hessclark/galleRE/releases/latest/download/galleRE.dmg)** and double-click to open it.
 2. In the window that opens, **drag galleRE onto the Applications folder**.
-3. **First launch:** open Applications, right-click (or Control-click) **galleRE** → **Open** → **Open** again in the dialog.
+3. **First launch:** open Applications and double-click **galleRE**. macOS says it can't verify the developer — click **Done**.
+4. Open **System Settings → Privacy & Security**, scroll down, and click **Open Anyway** next to galleRE. Confirm with Touch ID or your password. You only do this once.
 
+> **Why the extra step?** galleRE is open source and ad-hoc signed (not paid Apple notarization). On macOS Sequoia and later, Apple removed the old right-click → Open bypass, so the one-time approval now lives in **System Settings → Privacy & Security → Open Anyway**.
+>
 > Prefer a zip? A `galleRE-macOS.zip` is also attached to each [release](https://github.com/hessclark/galleRE/releases/latest).
 
 > **Why the right-click?** galleRE is open source and *ad-hoc signed* (not paid Apple notarization), so on first launch macOS shows *"Apple could not verify galleRE is free of malware."* Right-click → **Open** tells macOS you trust it — you only do this once. (Alternatively: **System Settings → Privacy & Security → Open Anyway**.)
