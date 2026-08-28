@@ -12,7 +12,7 @@ A native macOS app: reorder by drag-and-drop, rename to lock in the order, batch
 
 > 🍎 **macOS only.** galleRE is a native Mac app — it does not run on Windows, Linux, iPhone, or iPad.
 
-### 🌐 [galleRE website](https://hessclark.github.io/galleRE/)
+### 🌐 [gallere.app](https://gallere.app)
 
 </div>
 

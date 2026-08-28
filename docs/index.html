@@ -3,9 +3,75 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>galleRE — Organize real-estate photos for the MLS</title>
-<meta name="description" content="galleRE — the best way to organize, optimize, and manage your real estate MLS photos. A free, native macOS app to reorder, rename, resize, convert, watermark, and fit your MLS photo limit.">
+<title>galleRE — MLS Photo Organizer for Realtors | Reorder, Resize &amp; Watermark Real Estate Photos on Mac</title>
+<meta name="description" content="galleRE is a free Mac app that helps Realtors and real estate photographers organize MLS photos: reorder and lock photo order across multiple MLS systems, batch-resize for upload, convert HEIC/PNG/PDF to JPG, fit MLS photo limits, and add AI/virtual-staging watermarks.">
+<meta name="keywords" content="MLS photo organizer, real estate photo software, resize photos for MLS, reorder MLS photos, real estate photo order, Realtor photo tool, virtual staging watermark, HEIC to JPG MLS, listing photo management, batch resize real estate photos, Mac">
+<link rel="canonical" href="https://gallere.app/">
 <link rel="icon" type="image/png" href="favicon.png">
+
+<!-- Open Graph / social -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="galleRE">
+<meta property="og:title" content="galleRE — MLS Photo Organizer for Realtors">
+<meta property="og:description" content="Organize, reorder, resize, convert, and watermark your real estate MLS photos — and keep them in the same order across every MLS. Free, native Mac app.">
+<meta property="og:url" content="https://gallere.app/">
+<meta property="og:image" content="https://gallere.app/screenshot.jpg?v=2">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="galleRE — MLS Photo Organizer for Realtors">
+<meta name="twitter:description" content="Reorder, resize, convert, and watermark real estate MLS photos — keep them in the same order across every MLS. Free Mac app.">
+<meta name="twitter:image" content="https://gallere.app/screenshot.jpg?v=2">
+
+<!-- Structured data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "galleRE",
+  "applicationCategory": "MultimediaApplication",
+  "applicationSubCategory": "Real Estate MLS Photo Organizer",
+  "operatingSystem": "macOS 14+",
+  "url": "https://gallere.app/",
+  "downloadUrl": "https://github.com/hessclark/galleRE/releases/latest",
+  "softwareVersion": "1.0",
+  "description": "A free, native macOS app for Realtors and real estate photographers to reorder, rename, resize, convert, and watermark MLS listing photos, and keep them in the same order across multiple MLS systems.",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "author": { "@type": "Person", "name": "Clark Hess" },
+  "license": "https://opensource.org/licenses/MIT"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How do I keep my listing photos in the same order across multiple MLS systems?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Drag your photos into the order you want and click Save Current Order. galleRE renames the files with sequential number prefixes (01_, 02_, and so on), so Finder and every MLS or website that sorts by filename shows them in exactly the same order — no re-sorting for each platform." }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the best size to resize real estate photos for the MLS?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Most MLS systems work best with a long edge around 1024 to 2048 pixels and a JPEG a few megabytes or smaller. galleRE lets you set a long-edge pixel target or a maximum file size and batch-resizes every photo to match, so uploads are fast and accepted." }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I convert iPhone HEIC photos to JPG for the MLS?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. galleRE automatically converts HEIC, PNG, TIFF, and PDF files to MLS-ready JPG on export, so photos shot on an iPhone upload without errors." }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I add a virtual staging or AI disclosure to a listing photo?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Select the photo and toggle the watermark. galleRE burns your chosen text — for example, 'This image was virtually staged or edited with AI' — into the exported copy, while the original stays untouched." }
+    },
+    {
+      "@type": "Question",
+      "name": "Is galleRE free and what does it run on?",
+      "acceptedAnswer": { "@type": "Answer", "text": "galleRE is free and open source under the MIT license, and runs on macOS 14 or later on both Apple Silicon and Intel Macs." }
+    }
+  ]
+}
+</script>
 <style>
   :root {
     --grad1: #6081ff; --grad2: #7c5cea; --grad3: #6346dc;
@@ -72,6 +138,14 @@
   .feature .emoji { font-size: 1.5rem; }
   .feature h3 { margin: 8px 0 4px; font-size: 1.05rem; }
   .feature p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+
+  .prose { max-width: 720px; }
+  .prose h3 { font-size: 1.15rem; margin: 24px 0 6px; }
+  .prose p { color: var(--muted); margin: 0 0 14px; }
+  .prose strong { color: var(--ink); }
+  .faq-item { border-top: 1px solid var(--border); padding: 16px 0; }
+  .faq-item h3 { margin: 0 0 6px; font-size: 1.05rem; }
+  .faq-item p { margin: 0; color: var(--muted); }
 
   ol.install { padding-left: 20px; }
   ol.install li { margin-bottom: 10px; }
@@ -153,6 +227,85 @@
         <h3>Your settings</h3>
         <p>Choose naming style, resize target, quality and output folder in a simple export wizard.</p>
       </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap prose">
+    <h2>Built for real estate agents, brokers, and photographers</h2>
+    <p>
+      Every listing starts the same way: dozens of photos from the shoot and a specific order they need
+      to appear in on the MLS. The trouble is that Finder sorts by filename, MLS uploaders sort by filename,
+      and your camera's <em>IMG_4821.jpg</em> names have nothing to do with the story you want buyers to see —
+      exterior, then living room, then the primary suite. <strong>galleRE fixes this at the source.</strong>
+      Drag your photos into the perfect order once, click <strong>Save Current Order</strong>, and the files are
+      renamed with sequential numbers so Finder, each MLS, and your website all display them in the same order —
+      automatically.
+    </p>
+
+    <h3>One order, every MLS and platform</h3>
+    <p>
+      If you list on more than one MLS — or re-upload the same set to Zillow, your brokerage site, a virtual
+      tour, and a printed flyer — you normally have to recreate that exact photo order every single time.
+      Because galleRE bakes the order into the filenames, <strong>your photos stay in the same sequence
+      everywhere you upload them.</strong> Reorder by drag-and-drop, and reuse the same optimized folder across
+      every system instead of re-sorting by hand.
+    </p>
+
+    <h3>Optimized upload sizes, and the right file types</h3>
+    <p>
+      MLS systems are picky about photo size. Upload a 24-megapixel file straight from the camera and it's
+      rejected or painfully slow; upload something too small and it looks bad on a big screen. galleRE
+      <strong>batch-resizes every photo to your MLS's ideal dimensions</strong> in one click, with quality you
+      control, and converts iPhone <strong>HEIC, PNG, TIFF, and even PDF floor plans into clean, MLS-ready JPGs</strong>.
+      Your originals are never touched — the optimized copies land in their own folder, ready to upload.
+    </p>
+
+    <h3>Photo limits and AI / virtual-staging disclosures</h3>
+    <p>
+      Different MLS systems cap how many photos you can post — some allow 24, others 36 or 50. galleRE lets you
+      set that limit and shows a <strong>live counter</strong> as you include or exclude shots, so you can trim
+      to the strongest set without guesswork. And with new disclosure rules around AI and virtual staging, you
+      can add a text watermark like <em>"This image was virtually staged or edited with AI"</em> to any photo in
+      seconds — keeping your listings compliant while your originals stay clean.
+    </p>
+
+    <p>
+      The result: less time wrangling filenames and export settings, and more time selling homes.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap prose">
+    <h2>Frequently asked questions</h2>
+    <div class="faq-item">
+      <h3>How do I keep my listing photos in the same order across multiple MLS systems?</h3>
+      <p>Drag your photos into the order you want and click Save Current Order. galleRE renames the files with
+         sequential number prefixes (01_, 02_, …), so Finder and every MLS or website that sorts by filename shows
+         them in exactly the same order — no re-sorting for each platform.</p>
+    </div>
+    <div class="faq-item">
+      <h3>What's the best size to resize real estate photos for the MLS?</h3>
+      <p>Most MLS systems work best with a long edge around 1024–2048 pixels and a JPEG a few megabytes or smaller.
+         galleRE lets you set a long-edge pixel target or a maximum file size and batch-resizes every photo to match,
+         so uploads are fast and accepted.</p>
+    </div>
+    <div class="faq-item">
+      <h3>Can I convert iPhone HEIC photos to JPG for the MLS?</h3>
+      <p>Yes. galleRE automatically converts HEIC, PNG, TIFF, and PDF files to MLS-ready JPG on export, so photos
+         shot on an iPhone upload without errors.</p>
+    </div>
+    <div class="faq-item">
+      <h3>How do I add a virtual staging or AI disclosure to a photo?</h3>
+      <p>Select the photo and toggle the watermark. galleRE burns your chosen text — for example, "This image was
+         virtually staged or edited with AI" — into the exported copy, while the original stays untouched.</p>
+    </div>
+    <div class="faq-item">
+      <h3>Is galleRE free? What does it run on?</h3>
+      <p>galleRE is free and open source under the MIT license, and runs on macOS 14 or later on both Apple Silicon
+         and Intel Macs.</p>
     </div>
   </div>
 </section>
