@@ -34,6 +34,39 @@ struct HelpView: View {
               detail: "Change the naming scheme, resize target (long edge or max file size), JPEG quality, and where exports go. A live preview shows the resulting filename."),
     ]
 
+    private var creditCard: some View {
+        VStack(spacing: 12) {
+            VStack(spacing: 3) {
+                Text("Created by Clark Hess").font(.headline)
+                Text("galleRE is free & open source (MIT). If it helps your listings, a tip keeps it growing 💜")
+                    .font(.callout).foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            HStack(spacing: 10) {
+                Link(destination: Support.venmoURL) {
+                    Label("Donate · @ClarkHess", systemImage: "heart.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent).tint(.pink)
+                Link(destination: Support.githubURL) {
+                    Label("GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
+                }
+                .buttonStyle(.bordered)
+                Button {
+                    Support.reportBug()
+                } label: {
+                    Label("Report a Bug", systemImage: "ladybug")
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity)
+        .background(RoundedRectangle(cornerRadius: 12).fill(.tint.opacity(0.08)))
+        .padding(.top, 4)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
@@ -71,16 +104,7 @@ struct HelpView: View {
                         .font(.callout).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    Divider().padding(.vertical, 4)
-                    HStack(spacing: 6) {
-                        Text("Created by **Clark Hess**  ·  free & open source (MIT)")
-                            .font(.caption).foregroundStyle(.secondary)
-                        Spacer()
-                        Link("GitHub", destination: URL(string: "https://github.com/hessclark/galleRE")!)
-                            .font(.caption)
-                        Link("Donate 💜", destination: URL(string: "https://venmo.com/u/ClarkHess")!)
-                            .font(.caption)
-                    }
+                    creditCard
                 }
                 .padding()
             }

@@ -3,8 +3,8 @@ import SwiftUI
 struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
 
-    private let githubURL = URL(string: "https://github.com/hessclark/galleRE")!
-    private let venmoURL  = URL(string: "https://venmo.com/u/ClarkHess")!
+    private let githubURL = Support.githubURL
+    private let venmoURL  = Support.venmoURL
 
     var body: some View {
         VStack(spacing: 18) {
@@ -35,6 +35,14 @@ struct AboutView: View {
             VStack(spacing: 10) {
                 Link(destination: githubURL) {
                     Label("View source on GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered).controlSize(.large)
+
+                Button {
+                    Support.reportBug()
+                } label: {
+                    Label("Report a Bug", systemImage: "ladybug")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered).controlSize(.large)

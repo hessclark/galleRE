@@ -27,6 +27,10 @@ struct galleREApp: App {
                     NotificationCenter.default.post(name: .showHelp, object: nil)
                 }
                 .keyboardShortcut("?", modifiers: .command)
+                Divider()
+                Button("Report a Bug…") { Support.reportBug() }
+                Button("View Source on GitHub") { NSWorkspace.shared.open(Support.githubURL) }
+                Button("Donate (Venmo)") { NSWorkspace.shared.open(Support.venmoURL) }
             }
         }
     }
