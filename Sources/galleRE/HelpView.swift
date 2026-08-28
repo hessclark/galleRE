@@ -12,37 +12,96 @@ struct HelpView: View {
 
     private let steps: [Step] = [
         .init(icon: "folder",
-              title: "1 · Open a folder",
-              detail: "Click Open Folder and choose the folder of property photos. JPEG, PNG, HEIC, TIFF and PDF files all appear in the grid (PDFs show their first page), each with its dimensions and size."),
+              title: "Open a folder",
+              detail: "Thumbnails load in a grid — JPEG, PNG, HEIC, TIFF and PDF."),
         .init(icon: "hand.draw",
-              title: "2 · Drag to reorder",
-              detail: "Drag any thumbnail to a new spot. The number badge on each photo updates live to show the current MLS order."),
-        .init(icon: "eye",
-              title: "3 · Preview a photo",
-              detail: "Click a photo to select it, then press Space (or double-click) for a large preview. Use ← / → to flip through, Space or Esc to close."),
+              title: "Drag to reorder",
+              detail: "The number badge shows each photo's MLS position. Press Space to preview."),
         .init(icon: "textformat.123",
-              title: "4 · Save Current Order",
-              detail: "Renames the files in place with number prefixes so Finder — and the MLS uploader — keeps your exact order. Uses safe two-phase renaming."),
-        .init(icon: "arrow.down.right.and.arrow.up.left",
-              title: "5 · Resize for MLS",
-              detail: "Writes downsized JPEGs (per your Settings, default long edge 1024px) into an export subfolder, renamed in order. HEIC, PNG and PDF files are converted to JPG automatically; multi-page PDFs become one JPG per page. Originals stay untouched."),
+              title: "Save Current Order",
+              detail: "Renames files in place so Finder and the MLS keep your order."),
         .init(icon: "square.and.arrow.up",
-              title: "Export Full-Size",
-              detail: "Need full-resolution copies too? This writes renamed, full-size files to the export subfolder — great for brochures or archives."),
-        .init(icon: "gearshape",
-              title: "Settings",
-              detail: "Change the naming scheme, resize target (long edge or max file size), JPEG quality, and where exports go. A live preview shows the resulting filename."),
+              title: "Export…",
+              detail: "One wizard: resize for MLS or keep full-res, convert PDFs/HEIC to JPG, and rename — copies go to a subfolder, originals untouched."),
     ]
 
-    private var creditCard: some View {
-        VStack(spacing: 12) {
-            VStack(spacing: 3) {
-                Text("Created by Clark Hess").font(.headline)
-                Text("galleRE is free & open source (MIT). If it helps your listings, a tip keeps it growing 💜")
-                    .font(.callout).foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+    // App-icon gradient, reused as the screen's accent.
+    private let iconGradient = LinearGradient(
+        colors: [Color(red: 96/255, green: 129/255, blue: 1),
+                 Color(red: 124/255, green: 92/255, blue: 234/255),
+                 Color(red: 99/255, green: 70/255, blue: 220/255)],
+        startPoint: .topLeading, endPoint: .bottomTrailing)
+
+    var body: some View {
+        VStack(spacing: 0) {
+            header
+            Divider()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    ForEach(steps) { step in
+                        HStack(alignment: .top, spacing: 13) {
+                            Image(systemName: step.icon)
+                                .font(.title3)
+                                .frame(width: 34, height: 34)
+                                .background(iconGradient.opacity(0.16), in: RoundedRectangle(cornerRadius: 9))
+                                .foregroundStyle(Color(red: 108/255, green: 82/255, blue: 226/255))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(step.title).font(.headline)
+                                Text(step.detail).font(.callout).foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                    creditCard
+                }
+                .padding(18)
             }
+            Divider()
+            HStack {
+                Spacer()
+                Button("Get Started") { dismiss() }
+                    .keyboardShortcut(.defaultAction).controlSize(.large)
+            }
+            .padding()
+        }
+        .frame(width: 500, height: 560)
+    }
+
+    private var header: some View {
+        HStack(spacing: 14) {
+            appIcon
+                .frame(width: 60, height: 60)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .shadow(color: .black.opacity(0.18), radius: 6, y: 3)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Welcome to galleRE").font(.title2.bold())
+                Text("Order, rename, and resize property photos for the MLS.")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding(18)
+    }
+
+    /// The real app icon if available, otherwise a drawn stand-in in the same style.
+    @ViewBuilder
+    private var appIcon: some View {
+        if let url = Bundle.main.url(forResource: "galleRE", withExtension: "icns"),
+           let img = NSImage(contentsOf: url) {
+            Image(nsImage: img).resizable()
+        } else {
+            ZStack {
+                iconGradient
+                Image(systemName: "house.fill").foregroundStyle(.white).font(.system(size: 26))
+            }
+        }
+    }
+
+    private var creditCard: some View {
+        VStack(spacing: 10) {
+            Text("Created by Clark Hess · free & open source (MIT)")
+                .font(.callout).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
             HStack(spacing: 10) {
                 Link(destination: Support.venmoURL) {
                     Label("Donate · @ClarkHess", systemImage: "heart.fill")
@@ -53,71 +112,15 @@ struct HelpView: View {
                     Label("GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
                 }
                 .buttonStyle(.bordered)
-                Button {
-                    Support.reportBug()
-                } label: {
+                Button { Support.reportBug() } label: {
                     Label("Report a Bug", systemImage: "ladybug")
                 }
                 .buttonStyle(.bordered)
             }
         }
-        .padding(16)
+        .padding(14)
         .frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 12).fill(.tint.opacity(0.08)))
-        .padding(.top, 4)
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                Image(systemName: "house.and.flag")
-                    .font(.title).foregroundStyle(.tint)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Welcome to galleRE").font(.title2.bold())
-                    Text("Organize, order, and resize real-estate photos for the MLS.")
-                        .font(.callout).foregroundStyle(.secondary)
-                }
-                Spacer()
-            }
-            .padding()
-            Divider()
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    ForEach(steps) { step in
-                        HStack(alignment: .top, spacing: 14) {
-                            Image(systemName: step.icon)
-                                .font(.title3)
-                                .frame(width: 34, height: 34)
-                                .background(.tint.opacity(0.15), in: RoundedRectangle(cornerRadius: 8))
-                                .foregroundStyle(.tint)
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(step.title).font(.headline)
-                                Text(step.detail).font(.callout).foregroundStyle(.secondary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                        }
-                    }
-
-                    Divider().padding(.vertical, 4)
-                    Text("Tip: your originals are never modified by resizing — exports always go to a separate subfolder. \"Save Current Order\" is the only action that renames files in place.")
-                        .font(.callout).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    creditCard
-                }
-                .padding()
-            }
-
-            Divider()
-            HStack {
-                Spacer()
-                Button("Get Started") { dismiss() }
-                    .keyboardShortcut(.defaultAction)
-                    .controlSize(.large)
-            }
-            .padding()
-        }
-        .frame(width: 520, height: 620)
+        .background(RoundedRectangle(cornerRadius: 12).fill(iconGradient.opacity(0.08)))
+        .padding(.top, 6)
     }
 }
