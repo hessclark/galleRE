@@ -15,8 +15,11 @@ struct ContentView: View {
     @State private var showExport = false
     @State private var showAbout = false
     @State private var showLimitEditor = false
+    @State private var showDonation = false
     @AppStorage("hasSeenHelp") private var hasSeenHelp = false
     @AppStorage("dragHintDismissed") private var dragHintDismissed = false
+    @AppStorage("launchCount") private var launchCount = 0
+    static var launchCounted = false   // ensure we count once per process launch
 
     private var columns: [GridItem] {
         [GridItem(.adaptive(minimum: thumbScale, maximum: thumbScale * 1.4), spacing: 12)]
@@ -43,10 +46,19 @@ struct ContentView: View {
         .sheet(isPresented: $showAbout) {
             AboutView()
         }
+        .sheet(isPresented: $showDonation) {
+            DonationPromptView()
+        }
         .onAppear {
+            guard !Self.launchCounted else { return }
+            Self.launchCounted = true
+            launchCount += 1
             if !hasSeenHelp {
                 hasSeenHelp = true
                 showHelp = true
+            } else if launchCount % 5 == 0 {
+                // every 5th launch, thank the user and invite a donation
+                showDonation = true
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .showHelp)) { _ in
