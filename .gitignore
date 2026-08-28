@@ -1,0 +1,15 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode
+*.xcodeproj/
+DerivedData/
+
+# Build artifacts
+galleRE.app/
+galleRE.iconset/
+
+# macOS
+.DS_Store
