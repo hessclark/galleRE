@@ -1,6 +1,8 @@
 import Foundation
 import ImageIO
 import CoreGraphics
+import CoreText
+import AppKit
 import UniformTypeIdentifiers
 
 /// Resizes and re-encodes an image according to the current settings.
@@ -27,6 +29,47 @@ enum ImageProcessor {
         }
     }
 
+    /// Burn a text watermark onto a copy of the image, returning a new CGImage.
+    static func watermark(_ image: CGImage, settings: AppSettings) -> CGImage {
+        let text = settings.watermarkText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return image }
+        let w = image.width, h = image.height
+        guard let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0,
+                                  space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return image }
+        ctx.draw(image, in: CGRect(x: 0, y: 0, width: w, height: h))
+
+        let fontSize = max(11, CGFloat(h) * CGFloat(settings.watermarkSizePct / 100.0))
+        let font = CTFontCreateWithName("HelveticaNeue-Bold" as CFString, fontSize, nil)
+        let alpha = CGFloat(max(0.05, min(1.0, settings.watermarkOpacity)))
+        let color = settings.watermarkWhite ? CGColor(gray: 1, alpha: alpha) : CGColor(gray: 0, alpha: alpha)
+        let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color]
+        let line = CTLineCreateWithAttributedString(NSAttributedString(string: text, attributes: attrs))
+
+        var ascent: CGFloat = 0, descent: CGFloat = 0, leading: CGFloat = 0
+        let textW = CGFloat(CTLineGetTypographicBounds(line, &ascent, &descent, &leading))
+        let textH = ascent + descent
+        let pad = fontSize * 0.7
+        let W = CGFloat(w), H = CGFloat(h)
+
+        var x: CGFloat, y: CGFloat // CG origin is bottom-left
+        switch settings.watermarkPosition {
+        case .bottomRight:  x = W - textW - pad; y = pad + descent
+        case .bottomLeft:   x = pad;             y = pad + descent
+        case .bottomCenter: x = (W - textW) / 2; y = pad + descent
+        case .topRight:     x = W - textW - pad; y = H - pad - ascent
+        case .topLeft:      x = pad;             y = H - pad - ascent
+        case .center:       x = (W - textW) / 2; y = (H - textH) / 2 + descent
+        }
+
+        // contrast shadow so the text is readable over any photo
+        ctx.setShadow(offset: .zero, blur: fontSize * 0.28,
+                      color: (settings.watermarkWhite ? CGColor(gray: 0, alpha: 0.8) : CGColor(gray: 1, alpha: 0.8)))
+        ctx.textPosition = CGPoint(x: x, y: y)
+        CTLineDraw(line, ctx)
+        return ctx.makeImage() ?? image
+    }
+
     private static func encodeJPEG(_ image: CGImage, quality: Double) -> Data? {
         let data = NSMutableData()
         guard let dest = CGImageDestinationCreateWithData(data, UTType.jpeg.identifier as CFString, 1, nil)
@@ -38,22 +81,25 @@ enum ImageProcessor {
     }
 
     /// Process a single file to `destURL` using the provided settings.
-    static func process(source: URL, destURL: URL, settings: AppSettings) throws -> Result {
+    static func process(source: URL, destURL: URL, settings: AppSettings, watermark applyMark: Bool = false) throws -> Result {
         let originalBytes = (try? FileManager.default.attributesOfItem(atPath: source.path)[.size] as? Int) ?? 0
 
         let data: Data
         switch settings.resizeMode {
         case .longEdge:
             let maxPixel = CGFloat(settings.longEdgePx)
-            guard let img = loadImage(source, maxPixel: maxPixel),
-                  let out = encodeJPEG(img, quality: settings.jpegQuality) else {
+            guard var img = loadImage(source, maxPixel: maxPixel) else {
+                throw ProcessingError.failed(source.lastPathComponent)
+            }
+            if applyMark { img = watermark(img, settings: settings) }
+            guard let out = encodeJPEG(img, quality: settings.jpegQuality) else {
                 throw ProcessingError.failed(source.lastPathComponent)
             }
             data = out
 
         case .targetFileSize:
             let cap = Int(settings.maxFileSizeMB * 1_000_000)
-            data = try compressToSize(source: source, capBytes: cap, settings: settings)
+            data = try compressToSize(source: source, capBytes: cap, settings: settings, watermark: applyMark)
         }
 
         try data.write(to: destURL, options: .atomic)
@@ -61,10 +107,14 @@ enum ImageProcessor {
     }
 
     /// Encode a raster image to JPEG at full resolution (no downscaling).
-    static func processFullSizeJPEG(source: URL, destURL: URL, quality: Double) throws -> Result {
+    static func processFullSizeJPEG(source: URL, destURL: URL, quality: Double,
+                                    settings: AppSettings, watermark applyMark: Bool = false) throws -> Result {
         let originalBytes = (try? FileManager.default.attributesOfItem(atPath: source.path)[.size] as? Int) ?? 0
-        guard let img = loadImage(source, maxPixel: nil),
-              let data = encodeJPEG(img, quality: quality) else {
+        guard var img = loadImage(source, maxPixel: nil) else {
+            throw ProcessingError.failed(source.lastPathComponent)
+        }
+        if applyMark { img = watermark(img, settings: settings) }
+        guard let data = encodeJPEG(img, quality: quality) else {
             throw ProcessingError.failed(source.lastPathComponent)
         }
         try data.write(to: destURL, options: .atomic)
@@ -72,7 +122,7 @@ enum ImageProcessor {
     }
 
     /// Iteratively reduce dimensions and quality until under the byte cap.
-    private static func compressToSize(source: URL, capBytes: Int, settings: AppSettings) throws -> Data {
+    private static func compressToSize(source: URL, capBytes: Int, settings: AppSettings, watermark applyMark: Bool = false) throws -> Data {
         // Start from full size, step the long edge down.
         var longEdge: CGFloat = {
             if let img = loadImage(source, maxPixel: nil) {
@@ -85,8 +135,9 @@ enum ImageProcessor {
         var best: Data?
 
         for _ in 0..<12 {
-            guard let img = loadImage(source, maxPixel: longEdge),
-                  let data = encodeJPEG(img, quality: quality) else { break }
+            guard var img = loadImage(source, maxPixel: longEdge) else { break }
+            if applyMark { img = watermark(img, settings: settings) }
+            guard let data = encodeJPEG(img, quality: quality) else { break }
             best = data
             if data.count <= capBytes { return data }
             // reduce: drop quality first, then dimensions
@@ -154,12 +205,15 @@ enum ImageProcessor {
 
     /// Convert one PDF page to a JPEG at `destURL`.
     static func processPDFPage(source: URL, page: Int, destURL: URL,
-                               settings: AppSettings, resize: Bool) throws -> Result {
+                               settings: AppSettings, resize: Bool, watermark applyMark: Bool = false) throws -> Result {
         let originalBytes = (try? FileManager.default.attributesOfItem(atPath: source.path)[.size] as? Int) ?? 0
         let maxPixel: CGFloat = resize ? CGFloat(settings.longEdgePx) : 2400
         let quality: Double = resize ? settings.jpegQuality : 0.92
-        guard let img = renderPDF(source, page: page, maxPixel: maxPixel),
-              let data = encodeJPEG(img, quality: quality) else {
+        guard var img = renderPDF(source, page: page, maxPixel: maxPixel) else {
+            throw ProcessingError.failed(source.lastPathComponent)
+        }
+        if applyMark { img = watermark(img, settings: settings) }
+        guard let data = encodeJPEG(img, quality: quality) else {
             throw ProcessingError.failed(source.lastPathComponent)
         }
         try data.write(to: destURL, options: .atomic)

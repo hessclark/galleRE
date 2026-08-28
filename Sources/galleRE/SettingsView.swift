@@ -60,6 +60,44 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("MLS photo limit") {
+                    HStack {
+                        Text("Max photos")
+                        Spacer()
+                        TextField("", value: $settings.maxPhotos, format: .number)
+                            .frame(width: 60).multilineTextAlignment(.trailing)
+                    }
+                    Text(settings.maxPhotos > 0
+                         ? "A counter shows how many photos are included vs. your limit of \(settings.maxPhotos). Photos past the limit are flagged, and you can trim to fit."
+                         : "0 = no limit. Set your MLS's maximum (e.g. 24) to get a live count and trimming help.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+
+                Section("Watermark") {
+                    TextField("Text", text: $settings.watermarkText, axis: .vertical)
+                        .lineLimit(1...3)
+                    Picker("Position", selection: Binding(
+                        get: { settings.watermarkPosition },
+                        set: { settings.watermarkPosition = $0 })) {
+                        ForEach(WatermarkPosition.allCases) { Text($0.label).tag($0) }
+                    }
+                    Picker("Color", selection: $settings.watermarkWhite) {
+                        Text("White").tag(true)
+                        Text("Black").tag(false)
+                    }
+                    .pickerStyle(.segmented)
+                    VStack(alignment: .leading) {
+                        Text("Size: \(settings.watermarkSizePct, specifier: "%.1f")% of image height")
+                        Slider(value: $settings.watermarkSizePct, in: 1.5...8)
+                    }
+                    VStack(alignment: .leading) {
+                        Text("Opacity: \(Int(settings.watermarkOpacity * 100))%")
+                        Slider(value: $settings.watermarkOpacity, in: 0.2...1.0)
+                    }
+                    Text("Turn the watermark on per photo with the 🅰︎ toggle on each thumbnail, or the Watermark toolbar button. It's burned in only on export — originals stay clean.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+
                 Section("Output") {
                     Picker("When exporting", selection: Binding(
                         get: { settings.outputMode },

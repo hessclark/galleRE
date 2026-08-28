@@ -54,18 +54,25 @@ final class PhotoStore: ObservableObject {
         isBusy = true
         defer { isBusy = false }
         let fm = FileManager.default
-        let total = items.count
+        let total = items.filter { $0.included }.count
 
         // Two-phase to avoid collisions: rename to temp names, then to finals.
+        // Included photos are numbered in order; excluded photos get an "x_" prefix.
         var tempMap: [(item: PhotoItem, finalName: String)] = []
-        for (idx, item) in items.enumerated() {
+        var includedRank = 0
+        for item in items {
             let ext = item.url.pathExtension
             let originalBase = item.url.deletingPathExtension().lastPathComponent
-            // strip any existing leading number prefix like "01_" to avoid stacking
             let cleanedBase = stripLeadingNumber(from: originalBase)
-            let base = settings.fileBaseName(order: idx + 1,
+            let base: String
+            if item.included {
+                includedRank += 1
+                base = settings.fileBaseName(order: includedRank,
                                              originalBaseName: cleanedBase,
                                              totalCount: total)
+            } else {
+                base = "x_" + cleanedBase
+            }
             let finalName = ext.isEmpty ? base : "\(base).\(ext)"
             tempMap.append((item, finalName))
         }
@@ -91,12 +98,36 @@ final class PhotoStore: ObservableObject {
     }
 
     private func stripLeadingNumber(from base: String) -> String {
-        // remove patterns like "01_", "001-", "12 " at the very start
+        // remove a prior "x_" exclude prefix, then patterns like "01_", "001-", "12 "
+        var s = base
+        if s.hasPrefix("x_") { s = String(s.dropFirst(2)) }
         let pattern = "^\\d+[\\s_\\-]+"
-        if let range = base.range(of: pattern, options: .regularExpression) {
-            return String(base[range.upperBound...])
+        if let range = s.range(of: pattern, options: .regularExpression) {
+            return String(s[range.upperBound...])
         }
-        return base
+        return s
+    }
+
+    // MARK: - Include / exclude helpers
+
+    var includedCount: Int { items.filter { $0.included }.count }
+
+    func toggleIncluded(_ item: PhotoItem) { item.included.toggle(); objectWillChange.send() }
+    func toggleWatermark(_ item: PhotoItem) { item.watermarked.toggle(); objectWillChange.send() }
+    func setWatermarkAll(_ on: Bool) { items.forEach { $0.watermarked = on }; objectWillChange.send() }
+    func setIncludedAll(_ on: Bool) { items.forEach { $0.included = on }; objectWillChange.send() }
+
+    /// Exclude every included photo ranked beyond the MLS max (0 = no limit).
+    func trimToLimit() {
+        let max = settings.maxPhotos
+        guard max > 0 else { return }
+        var rank = 0
+        for item in items where item.included {
+            rank += 1
+            if rank > max { item.included = false }
+        }
+        statusMessage = "Trimmed to \(min(rank, max)) photo\(max == 1 ? "" : "s") (MLS limit \(max))"
+        objectWillChange.send()
     }
 
     // MARK: - Export (resize)
@@ -115,7 +146,8 @@ final class PhotoStore: ObservableObject {
         let verb = options.resize ? "Resizing" : "Exporting"
         statusMessage = "\(verb)…"
         let settings = self.settings
-        let snapshot = items
+        // Only included photos are exported, renumbered among themselves.
+        let snapshot = items.filter { $0.included }
         let outputDir = folderURL.appendingPathComponent(settings.exportFolderName, isDirectory: true)
         try? FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
         lastExportDir = outputDir
@@ -137,6 +169,7 @@ final class PhotoStore: ObservableObject {
                 let originalBase = item.url.deletingPathExtension().lastPathComponent
                 let cleaned = originalBase.replacingOccurrences(of: "^\\d+[\\s_\\-]+", with: "", options: .regularExpression)
                 let base = settings.fileBaseName(order: idx + 1, originalBaseName: cleaned, totalCount: total)
+                let mark = item.watermarked
 
                 if ImageProcessor.isPDF(item.url) {
                     // Rasterize each PDF page to its own JPG (page suffix only when multi-page).
@@ -145,22 +178,22 @@ final class PhotoStore: ObservableObject {
                         let suffix = pages > 1 ? "_p\(p)" : ""
                         let dest = outputDir.appendingPathComponent("\(base)\(suffix).jpg")
                         if let result = try? ImageProcessor.processPDFPage(
-                            source: item.url, page: p, destURL: dest, settings: settings, resize: resize) {
+                            source: item.url, page: p, destURL: dest, settings: settings, resize: resize, watermark: mark) {
                             savedBytes += (p == 1 ? result.originalBytes : 0) - result.newBytes
                             fileCount += 1
                         }
                     }
                 } else if resize {
                     let dest = outputDir.appendingPathComponent("\(base).jpg")
-                    if let result = try? ImageProcessor.process(source: item.url, destURL: dest, settings: settings) {
+                    if let result = try? ImageProcessor.process(source: item.url, destURL: dest, settings: settings, watermark: mark) {
                         savedBytes += (result.originalBytes - result.newBytes)
                         fileCount += 1
                     }
-                } else if convert {
-                    // full resolution, re-encoded to JPG
+                } else if convert || mark {
+                    // full resolution, re-encoded to JPG (forced when watermarking a raster copy)
                     let dest = outputDir.appendingPathComponent("\(base).jpg")
                     if let result = try? ImageProcessor.processFullSizeJPEG(
-                        source: item.url, destURL: dest, quality: settings.jpegQuality) {
+                        source: item.url, destURL: dest, quality: settings.jpegQuality, settings: settings, watermark: mark) {
                         savedBytes += (result.originalBytes - result.newBytes)
                         fileCount += 1
                     }

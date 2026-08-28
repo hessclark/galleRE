@@ -28,6 +28,21 @@ enum ResizeMode: String, CaseIterable, Identifiable {
     }
 }
 
+enum WatermarkPosition: String, CaseIterable, Identifiable {
+    case bottomRight, bottomLeft, bottomCenter, topRight, topLeft, center
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .bottomRight:  return "Bottom right"
+        case .bottomLeft:   return "Bottom left"
+        case .bottomCenter: return "Bottom center"
+        case .topRight:     return "Top right"
+        case .topLeft:      return "Top left"
+        case .center:       return "Center"
+        }
+    }
+}
+
 enum OutputMode: String, CaseIterable, Identifiable {
     case exportSubfolder // originals untouched, copies to subfolder
     case inPlace         // rename working files in place; resize to subfolder
@@ -57,6 +72,21 @@ final class AppSettings: ObservableObject {
 
     @AppStorage("outputMode")   var outputModeRaw: String = OutputMode.exportSubfolder.rawValue
     @AppStorage("exportFolderName") var exportFolderName: String = "MLS_export"
+
+    // Max photos allowed by the MLS (0 = no limit).
+    @AppStorage("maxPhotos") var maxPhotos: Int = 0
+
+    // Watermark
+    @AppStorage("watermarkText") var watermarkText: String = "This image was virtually staged or edited with AI"
+    @AppStorage("watermarkPosition") var watermarkPositionRaw: String = WatermarkPosition.bottomRight.rawValue
+    @AppStorage("watermarkOpacity") var watermarkOpacity: Double = 0.7
+    @AppStorage("watermarkSizePct") var watermarkSizePct: Double = 3.5   // font height as % of image height
+    @AppStorage("watermarkWhite") var watermarkWhite: Bool = true        // white text vs black
+
+    var watermarkPosition: WatermarkPosition {
+        get { WatermarkPosition(rawValue: watermarkPositionRaw) ?? .bottomRight }
+        set { watermarkPositionRaw = newValue.rawValue }
+    }
 
     var namingScheme: NamingScheme {
         get { NamingScheme(rawValue: namingSchemeRaw) ?? .numberPrefixKeepName }

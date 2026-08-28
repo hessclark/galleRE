@@ -9,6 +9,8 @@ final class PhotoItem: Identifiable, ObservableObject {
     @Published var thumbnail: NSImage?
     @Published var pixelSize: CGSize = .zero
     @Published var fileSizeBytes: Int = 0
+    @Published var included: Bool = true     // exported to the MLS set?
+    @Published var watermarked: Bool = false // burn the watermark on export?
 
     init(url: URL) {
         self.url = url

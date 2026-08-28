@@ -30,8 +30,9 @@ struct ExportWizardView: View {
             Image(systemName: "square.and.arrow.up.on.square").font(.title2).foregroundStyle(.tint)
             VStack(alignment: .leading, spacing: 1) {
                 Text("Export").font(.title2.bold())
-                Text("\(store.items.count) item\(store.items.count == 1 ? "" : "s") in current order")
-                    .font(.caption).foregroundStyle(.secondary)
+                Text(exportSummary)
+                    .font(.caption)
+                    .foregroundStyle(overLimit ? .orange : .secondary)
             }
             Spacer()
         }
@@ -121,14 +122,18 @@ struct ExportWizardView: View {
             HStack {
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
                 Spacer()
+                if overLimit {
+                    Button("Trim to \(settings.maxPhotos)") { store.trimToLimit() }
+                        .tint(.orange)
+                }
                 Button {
                     runExport()
                 } label: {
-                    Label("Export \(store.items.count) →", systemImage: "square.and.arrow.up")
+                    Label("Export \(store.includedCount) →", systemImage: "square.and.arrow.up")
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
-                .disabled(store.items.isEmpty)
+                .disabled(store.includedCount == 0)
             }
             .padding()
         }
@@ -169,6 +174,20 @@ struct ExportWizardView: View {
     }
 
     // MARK: Helpers
+
+    private var overLimit: Bool {
+        settings.maxPhotos > 0 && store.includedCount > settings.maxPhotos
+    }
+
+    private var exportSummary: String {
+        let n = store.includedCount
+        var s = "\(n) photo\(n == 1 ? "" : "s") will be exported"
+        if settings.maxPhotos > 0 {
+            s += overLimit ? " — \(n - settings.maxPhotos) over your limit of \(settings.maxPhotos)"
+                           : " (limit \(settings.maxPhotos))"
+        }
+        return s
+    }
 
     private var previewName: String {
         let base = settings.fileBaseName(order: 1, originalBaseName: "kitchen", totalCount: 24)

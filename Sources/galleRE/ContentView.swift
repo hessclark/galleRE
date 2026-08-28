@@ -69,6 +69,20 @@ struct ContentView: View {
         showPreview = true
     }
 
+    // Rank among included photos (1-based); nil for excluded.
+    private var includedRanks: [UUID: Int] {
+        var rank = 0
+        var map: [UUID: Int] = [:]
+        for it in store.items where it.included { rank += 1; map[it.id] = rank }
+        return map
+    }
+
+    private func isOverLimit(_ item: PhotoItem) -> Bool {
+        let max = settings.maxPhotos
+        guard max > 0, let r = includedRanks[item.id] else { return false }
+        return r > max
+    }
+
     private func moveSelection(_ delta: Int) {
         guard !store.items.isEmpty else { return }
         let current = store.items.firstIndex { $0.id == selectedID } ?? -1
@@ -105,16 +119,30 @@ struct ContentView: View {
                 .disabled(store.items.isEmpty || store.isBusy)
 
                 Button {
+                    if let id = selectedID, let item = store.items.first(where: { $0.id == id }) {
+                        store.toggleWatermark(item)
+                    }
+                } label: {
+                    Label("Watermark", systemImage: "textformat.size")
+                }
+                .help("Toggle the watermark on the selected photo (configure text in Settings)")
+                .disabled(selectedID == nil || store.isBusy)
+
+                Button {
                     showExport = true
                 } label: {
                     Label("Export…", systemImage: "square.and.arrow.up")
                 }
                 .help("Open the export wizard: resize, convert, rename and export")
                 .buttonStyle(.borderedProminent)
-                .disabled(store.items.isEmpty || store.isBusy)
+                .disabled(store.includedCount == 0 || store.isBusy)
             }
 
             Spacer()
+
+            if store.folderURL != nil, settings.maxPhotos > 0 {
+                countPill
+            }
 
             if store.folderURL != nil {
                 Slider(value: $thumbScale, in: 100...300) {}
@@ -159,7 +187,11 @@ struct ContentView: View {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 12) {
                     ForEach(Array(store.items.enumerated()), id: \.element.id) { index, item in
-                        PhotoCell(item: item, order: index + 1, isSelected: selectedID == item.id)
+                        PhotoCell(item: item,
+                                  includedRank: includedRanks[item.id],
+                                  isOverLimit: isOverLimit(item),
+                                  isSelected: selectedID == item.id,
+                                  store: store)
                             .opacity(draggingID == item.id ? 0.35 : 1)
                             .onTapGesture(count: 2) { openPreview(item.id) }
                             .onTapGesture { selectedID = item.id }
@@ -188,6 +220,27 @@ struct ContentView: View {
             }
           }
         }
+    }
+
+    @ViewBuilder
+    private var countPill: some View {
+        let count = store.includedCount
+        let max = settings.maxPhotos
+        let over = count > max
+        HStack(spacing: 8) {
+            Image(systemName: over ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+            Text("\(count) / \(max)").monospacedDigit()
+            if over {
+                Button("Trim") { store.trimToLimit() }
+                    .buttonStyle(.borderedProminent).controlSize(.small).tint(.orange)
+                    .help("Exclude photos beyond the MLS limit")
+            }
+        }
+        .font(.callout.weight(.semibold))
+        .foregroundStyle(over ? .orange : .green)
+        .padding(.horizontal, 10).padding(.vertical, 5)
+        .background((over ? Color.orange : Color.green).opacity(0.12), in: Capsule())
+        .help(over ? "\(count - max) over the MLS limit of \(max)" : "Within the MLS limit of \(max)")
     }
 
     private var dragHintBanner: some View {
@@ -258,8 +311,10 @@ struct ContentView: View {
 
 struct PhotoCell: View {
     @ObservedObject var item: PhotoItem
-    let order: Int
+    var includedRank: Int?          // position among included photos; nil if excluded
+    var isOverLimit: Bool = false
     var isSelected: Bool = false
+    let store: PhotoStore
     @State private var hovering = false
 
     var body: some View {
@@ -278,25 +333,40 @@ struct PhotoCell: View {
                 .frame(maxWidth: .infinity)
                 .aspectRatio(4.0/3.0, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
+                .saturation(item.included ? 1 : 0)
+                .opacity(item.included ? 1 : 0.55)
 
-                Text("\(order)")
-                    .font(.caption.bold().monospacedDigit())
-                    .padding(.horizontal, 7).padding(.vertical, 3)
-                    .background(.black.opacity(0.65), in: Capsule())
-                    .foregroundStyle(.white)
-                    .padding(6)
+                // Order badge (or an excluded marker)
+                orderBadge.padding(6)
 
-                // Drag affordance: a grab handle that appears on hover.
-                Image(systemName: "arrow.up.and.down.and.arrow.left.and.right")
-                    .font(.caption.weight(.bold))
-                    .padding(6)
-                    .background(.black.opacity(0.55), in: Circle())
-                    .foregroundStyle(.white)
-                    .padding(6)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                    .opacity(hovering ? 1 : 0)
-                    .animation(.easeInOut(duration: 0.15), value: hovering)
-                    .allowsHitTesting(false)
+                // Watermark tag (persistent when on)
+                if item.watermarked {
+                    Label("Watermark", systemImage: "textformat.size")
+                        .font(.system(size: 9, weight: .bold))
+                        .labelStyle(.titleAndIcon)
+                        .padding(.horizontal, 6).padding(.vertical, 3)
+                        .background(.blue.opacity(0.85), in: Capsule())
+                        .foregroundStyle(.white)
+                        .padding(6)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                }
+
+                // Hover controls: include toggle + watermark toggle
+                HStack(spacing: 6) {
+                    cellButton(item.included ? "eye.fill" : "eye.slash.fill",
+                               tip: item.included ? "Exclude from MLS set" : "Include in MLS set") {
+                        store.toggleIncluded(item)
+                    }
+                    cellButton(item.watermarked ? "textformat.size" : "textformat",
+                               active: item.watermarked,
+                               tip: item.watermarked ? "Remove watermark" : "Add watermark") {
+                        store.toggleWatermark(item)
+                    }
+                }
+                .padding(6)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                .opacity(hovering ? 1 : 0)
+                .animation(.easeInOut(duration: 0.15), value: hovering)
             }
             Text(item.fileName)
                 .font(.caption2).lineLimit(1).truncationMode(.middle)
@@ -307,12 +377,42 @@ struct PhotoCell: View {
         .background(RoundedRectangle(cornerRadius: 10).fill(.background.secondary))
         .overlay(
             RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(Color.accentColor, lineWidth: isSelected ? 3 : 0)
+                .strokeBorder(isSelected ? Color.accentColor : (isOverLimit ? Color.orange : .clear),
+                              lineWidth: (isSelected || isOverLimit) ? 3 : 0)
         )
         .onHover { h in
             hovering = h
             if h { NSCursor.openHand.push() } else { NSCursor.pop() }
         }
+    }
+
+    @ViewBuilder
+    private var orderBadge: some View {
+        if let rank = includedRank {
+            Text("\(rank)")
+                .font(.caption.bold().monospacedDigit())
+                .padding(.horizontal, 7).padding(.vertical, 3)
+                .background((isOverLimit ? Color.orange : .black.opacity(0.65)), in: Capsule())
+                .foregroundStyle(.white)
+        } else {
+            Image(systemName: "eye.slash.fill")
+                .font(.caption2.bold())
+                .padding(5)
+                .background(.black.opacity(0.55), in: Circle())
+                .foregroundStyle(.white)
+        }
+    }
+
+    private func cellButton(_ symbol: String, active: Bool = false, tip: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.caption.weight(.bold))
+                .frame(width: 26, height: 26)
+                .background((active ? Color.blue : .black.opacity(0.55)), in: Circle())
+                .foregroundStyle(.white)
+        }
+        .buttonStyle(.plain)
+        .help(tip)
     }
 }
 
