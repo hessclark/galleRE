@@ -6,12 +6,24 @@ cd "$(dirname "$0")"
 APP_NAME="galleRE"
 BUNDLE_ID="com.clarkhess.gallere"
 CONFIG="release"
-
-echo "▸ Compiling ($CONFIG)…"
-swift build -c "$CONFIG"
-
-BIN_PATH="$(swift build -c "$CONFIG" --show-bin-path)/$APP_NAME"
 APP_DIR="./$APP_NAME.app"
+
+# Pass --universal to build a fat binary (Apple Silicon + Intel) for distribution.
+if [ "$1" = "--universal" ]; then
+    echo "▸ Compiling universal (arm64 + x86_64)…"
+    swift build -c "$CONFIG" --arch arm64
+    swift build -c "$CONFIG" --arch x86_64
+    ARM="$(swift build -c "$CONFIG" --arch arm64 --show-bin-path)/$APP_NAME"
+    X64="$(swift build -c "$CONFIG" --arch x86_64 --show-bin-path)/$APP_NAME"
+    mkdir -p .build/universal
+    BIN_PATH=".build/universal/$APP_NAME"
+    lipo -create "$ARM" "$X64" -output "$BIN_PATH"
+    echo "  archs: $(lipo -archs "$BIN_PATH")"
+else
+    echo "▸ Compiling ($CONFIG)…"
+    swift build -c "$CONFIG"
+    BIN_PATH="$(swift build -c "$CONFIG" --show-bin-path)/$APP_NAME"
+fi
 
 echo "▸ Assembling $APP_DIR…"
 rm -rf "$APP_DIR"

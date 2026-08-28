@@ -6,7 +6,28 @@
 
 Reorder by drag-and-drop, rename to lock in the order, and batch-resize/convert to MLS-ready JPGs — all in a fast, native SwiftUI app.
 
+![Platform: macOS only](https://img.shields.io/badge/platform-macOS%2014%2B-blue)
+![Universal: Apple Silicon + Intel](https://img.shields.io/badge/universal-Apple%20Silicon%20%2B%20Intel-lightgrey)
+![License: MIT](https://img.shields.io/badge/license-MIT-green)
+
+> 🍎 **macOS only.** galleRE is a native Mac app — it does not run on Windows, Linux, iPhone, or iPad.
+
 </div>
+
+---
+
+## Download & Install (Mac)
+
+**No developer tools required — just download and drag.**
+
+1. Go to the [**latest release**](https://github.com/hessclark/galleRE/releases/latest) and download **`galleRE-macOS.zip`**.
+2. Double-click the zip to unzip it (Safari may unzip it automatically). You'll get **galleRE.app**.
+3. Drag **galleRE.app** into your **Applications** folder.
+4. **First launch:** right-click (or Control-click) the app → **Open** → **Open** again in the dialog.
+
+> **Why the right-click?** galleRE is open source and *ad-hoc signed* (not paid Apple notarization), so on first launch macOS shows *"Apple could not verify galleRE is free of malware."* Right-click → **Open** tells macOS you trust it — you only do this once. (Alternatively: **System Settings → Privacy & Security → Open Anyway**.)
+
+**Requirements:** macOS 14 (Sonoma) or later. Runs natively on both Apple Silicon (M-series) and Intel Macs.
 
 ---
 
@@ -21,18 +42,24 @@ Reorder by drag-and-drop, rename to lock in the order, and batch-resize/convert 
 - 👁️ **Quick preview** — click a photo and press Space (or double-click) for a large preview; arrow keys flip through.
 - ⚙️ **Configurable** — naming scheme, resize target (long edge or max file size), JPEG quality, and output location.
 
-## Requirements
+## Build from source
+
+For developers who want to build it themselves (macOS only):
 
 - macOS 14 (Sonoma) or later
 - Swift 5.9+ toolchain (Xcode or Command Line Tools)
 
-## Build & Run
-
 ```bash
 git clone https://github.com/hessclark/galleRE.git
 cd galleRE
-./build_app.sh
+./build_app.sh            # single-arch build for your Mac
 open galleRE.app
+```
+
+To produce a universal (Apple Silicon + Intel) bundle for distribution:
+
+```bash
+./build_app.sh --universal
 ```
 
 `build_app.sh` compiles a release build and packages it into a double-clickable `galleRE.app` bundle (icon included). No full Xcode install required — Command Line Tools are enough.
