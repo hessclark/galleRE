@@ -154,6 +154,7 @@ struct ContentView: View {
                 }
                 .help("Open the export wizard: resize, convert, rename and export")
                 .buttonStyle(.borderedProminent)
+                .tint(.brand)
                 .disabled(store.includedCount == 0 || store.isBusy)
             }
 
@@ -347,7 +348,7 @@ struct ContentView: View {
     private var dragHintBanner: some View {
         HStack(spacing: 10) {
             Image(systemName: "hand.draw.fill")
-                .foregroundStyle(.tint)
+                .foregroundStyle(Color.brand)
                 .symbolEffect(.pulse, options: .repeating)
             Text("Drag any photo to reorder. The number badge shows its MLS position — then click **Save Current Order** to lock it in.")
                 .font(.callout)
@@ -361,7 +362,7 @@ struct ContentView: View {
             .help("Dismiss")
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(.tint.opacity(0.10))
+        .background(Brand.violet.opacity(0.10))
         .overlay(alignment: .bottom) { Divider() }
     }
 
@@ -478,7 +479,7 @@ struct PhotoCell: View {
         .background(RoundedRectangle(cornerRadius: 10).fill(.background.secondary))
         .overlay(
             RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(isSelected ? Color.accentColor : (isOverLimit ? Color.orange : .clear),
+                .strokeBorder(isSelected ? Color.brand : (isOverLimit ? Color.orange : .clear),
                               lineWidth: (isSelected || isOverLimit) ? 3 : 0)
         )
         .onHover { h in

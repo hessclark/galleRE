@@ -13,7 +13,6 @@ struct galleREApp: App {
         WindowGroup("galleRE") {
             ContentView()
                 .environmentObject(store)
-                .tint(.brand)
         }
         .windowStyle(.titleBar)
         .commands {
