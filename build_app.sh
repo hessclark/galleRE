@@ -5,7 +5,7 @@ cd "$(dirname "$0")"
 
 APP_NAME="galleRE"
 BUNDLE_ID="com.clarkhess.gallere"
-APP_VERSION="1.1.0"   # keep in sync with the GitHub release tag (vX.Y.Z)
+APP_VERSION="1.2.0"   # keep in sync with the GitHub release tag (vX.Y.Z)
 CONFIG="release"
 APP_DIR="./$APP_NAME.app"
 
