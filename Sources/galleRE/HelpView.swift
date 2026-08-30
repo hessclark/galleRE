@@ -11,8 +11,11 @@ struct HelpView: View {
     }
 
     private let steps: [Step] = [
+        .init(icon: "person.2.crop.square.stack",
+              title: "Set up your clients",
+              detail: "Point the Clients sidebar at the folder holding your listing-client folders to see them all. Click one to load its photos; archive a client to move it into an Archive folder (restore anytime)."),
         .init(icon: "folder",
-              title: "Open a folder",
+              title: "Or open any folder",
               detail: "Thumbnails load in a grid — JPEG, PNG, HEIC, TIFF and PDF."),
         .init(icon: "hand.draw",
               title: "Drag to reorder",

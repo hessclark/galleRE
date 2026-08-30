@@ -8,11 +8,13 @@ extension Notification.Name {
 @main
 struct galleREApp: App {
     @StateObject private var store = PhotoStore()
+    @StateObject private var clients = ClientsStore()
 
     var body: some Scene {
         WindowGroup("galleRE") {
             ContentView()
                 .environmentObject(store)
+                .environmentObject(clients)
         }
         .windowStyle(.titleBar)
         .commands {

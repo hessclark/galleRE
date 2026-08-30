@@ -3,7 +3,9 @@ import UniformTypeIdentifiers
 
 struct ContentView: View {
     @EnvironmentObject var store: PhotoStore
+    @EnvironmentObject var clients: ClientsStore
     @ObservedObject var settings = AppSettings.shared
+    @State private var selectedClient: URL?
     @State private var draggingID: UUID?
     @State private var selection: Set<UUID> = []
     @State private var anchorID: UUID?        // most recent click, for range-select & preview
@@ -26,14 +28,18 @@ struct ContentView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            toolbar
-            Divider()
-            content
-            Divider()
-            statusBar
+        NavigationSplitView {
+            ClientsSidebar(selectedClient: $selectedClient)
+                .environmentObject(clients)
+                .navigationSplitViewColumnWidth(min: 210, ideal: 250, max: 340)
+        } detail: {
+            mainContent
         }
-        .frame(minWidth: 720, minHeight: 520)
+        .frame(minWidth: 960, minHeight: 560)
+        .onChange(of: selectedClient) { _, url in
+            if let url { store.openFolder(url) }
+        }
+        .onAppear { clients.refresh() }
         .sheet(isPresented: $showSettings) {
             SettingsView().environmentObject(store)
         }
@@ -73,6 +79,16 @@ struct ContentView: View {
                     .environmentObject(store)
                     .transition(.opacity)
             }
+        }
+    }
+
+    private var mainContent: some View {
+        VStack(spacing: 0) {
+            toolbar
+            Divider()
+            content
+            Divider()
+            statusBar
         }
     }
 
@@ -416,6 +432,7 @@ struct ContentView: View {
         panel.allowsMultipleSelection = false
         panel.prompt = "Open"
         if panel.runModal() == .OK, let url = panel.url {
+            selectedClient = nil   // ad-hoc folder, not a client selection
             store.openFolder(url)
         }
     }
