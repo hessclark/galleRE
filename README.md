@@ -52,6 +52,17 @@ A native macOS app: reorder by drag-and-drop, rename to lock in the order, batch
 - 👁️ **Quick preview** — click a photo and press Space (or double-click) for a large preview; arrow keys flip through.
 - ⚙️ **Configurable** — naming scheme, resize target (long edge or max file size), JPEG quality, and output location.
 
+## Questions galleRE answers
+
+Common real-estate photo problems this app solves:
+
+- **How to batch rename real estate photos so the MLS keeps the order** — drag to reorder, then Save Current Order renames files with sequential number prefixes (`01_`, `02_`, …) so Finder and the MLS uploader preserve the sequence.
+- **How to keep listing photos in the same order across multiple MLS systems** — the order is baked into the filenames, so the same folder uploads in the same sequence everywhere.
+- **How to resize iPhone HEIC photos for the MLS on a Mac** — batch-resize to a long-edge pixel target or a max file size, converting HEIC → JPG automatically.
+- **How to batch convert HEIC / PNG / TIFF / PDF to JPG for MLS upload** — all convert to MLS-ready JPG on export; multi-page PDFs become one JPG per page.
+- **How to fit an MLS photo limit (24 / 36 / 50)** — set the limit, include/exclude with one click, and trim to fit with a live counter.
+- **How to batch add an AI / virtual-staging disclosure watermark to real estate photos** — select photos and burn in custom text (e.g. "This image was virtually staged or edited with AI") on export.
+
 ## Build from source
 
 For developers who want to build it themselves (macOS only):

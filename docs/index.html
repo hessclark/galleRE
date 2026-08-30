@@ -34,9 +34,9 @@
   "applicationSubCategory": "Real Estate MLS Photo Organizer",
   "operatingSystem": "macOS 14+",
   "url": "https://gallere.app/",
-  "downloadUrl": "https://github.com/hessclark/galleRE/releases/latest",
-  "softwareVersion": "1.0",
-  "description": "A free, native macOS app for Realtors and real estate photographers to reorder, rename, resize, convert, and watermark MLS listing photos, and keep them in the same order across multiple MLS systems.",
+  "downloadUrl": "https://github.com/hessclark/galleRE/releases/latest/download/galleRE.dmg",
+  "softwareVersion": "1.1",
+  "description": "Free open-source macOS app to organize, resize, sequentially reorder, and watermark MLS real estate listing photos.",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
   "author": { "@type": "Person", "name": "Clark Hess" },
   "license": "https://opensource.org/licenses/MIT"
@@ -71,6 +71,31 @@
       "@type": "Question",
       "name": "Is galleRE free and what does it run on?",
       "acceptedAnswer": { "@type": "Answer", "text": "galleRE is free and open source under the MIT license, and runs on macOS 14 or later on both Apple Silicon and Intel Macs." }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I organize listing photos for the MLS without re-sorting them every time?",
+      "acceptedAnswer": { "@type": "Answer", "text": "galleRE bakes the order into the filenames. Drag photos into the order you want once and click Save Current Order; it renames them with sequential number prefixes so Finder, the MLS, and any website that sorts by filename all show the same order. Reuse that folder everywhere instead of re-sorting for each platform." }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the best Mac app for real estate photo sequencing and batch resizing?",
+      "acceptedAnswer": { "@type": "Answer", "text": "galleRE is a free, native Mac app purpose-built for real estate photo sequencing and batch resizing: drag-to-reorder with sequential renaming, one-click batch resize to MLS-friendly sizes, HEIC/PNG/PDF to JPG conversion, MLS photo-count limits, and watermarks." }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I batch add an AI or virtual staging disclosure watermark to real estate photos?",
+      "acceptedAnswer": { "@type": "Answer", "text": "In galleRE, select one or more photos, toggle the watermark, and set your text (for example, 'This image was virtually staged or edited with AI'). galleRE burns the watermark into the exported JPGs in one batch while leaving your originals untouched." }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I batch rename real estate photos so the MLS keeps the order?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Arrange the photos in galleRE and click Save Current Order. It batch-renames the files in place with zero-padded number prefixes (01_, 02_, ...), which is the order the MLS and Finder use, so the sequence is preserved on upload." }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I resize iPhone HEIC photos for the MLS on a Mac?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Open the folder in galleRE and export: it batch-resizes to your chosen long-edge pixels or maximum file size and automatically converts iPhone HEIC files to MLS-ready JPG, with your originals left untouched." }
     }
   ]
 }
@@ -328,6 +353,24 @@
       <h3>How do I add a virtual staging or AI disclosure to a photo?</h3>
       <p>Select the photo and toggle the watermark. galleRE burns your chosen text — for example, "This image was
          virtually staged or edited with AI" — into the exported copy, while the original stays untouched.</p>
+    </div>
+    <div class="faq-item">
+      <h3>How do I organize listing photos for the MLS without re-sorting them every time?</h3>
+      <p>galleRE bakes the order into the filenames. Drag photos into the order you want once and click Save Current
+         Order — it renames them with sequential number prefixes so Finder, the MLS, and any website that sorts by
+         filename all show the same order. Reuse that folder everywhere instead of re-sorting for each platform.</p>
+    </div>
+    <div class="faq-item">
+      <h3>What's the best Mac app for real estate photo sequencing and batch resizing?</h3>
+      <p>galleRE is a free, native Mac app purpose-built for real estate photo sequencing and batch resizing:
+         drag-to-reorder with sequential renaming, one-click batch resize to MLS-friendly sizes, HEIC/PNG/PDF → JPG
+         conversion, MLS photo-count limits, and disclosure watermarks.</p>
+    </div>
+    <div class="faq-item">
+      <h3>How do I batch add an AI / virtual staging disclosure watermark to real estate photos?</h3>
+      <p>Select one or more photos, toggle the watermark, and set your text (e.g. "This image was virtually staged or
+         edited with AI"). galleRE burns the watermark into the exported JPGs in one batch while leaving your
+         originals untouched.</p>
     </div>
     <div class="faq-item">
       <h3>Is galleRE free? What does it run on?</h3>

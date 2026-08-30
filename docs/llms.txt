@@ -14,7 +14,7 @@ galleRE is built for real-estate agents and photographers who need to prepare li
 - Author/Creator: Clark Hess
 - Website: https://gallere.app
 - Source code: https://github.com/hessclark/galleRE
-- Download: https://github.com/hessclark/galleRE/releases/latest
+- Download (DMG): https://github.com/hessclark/galleRE/releases/latest/download/galleRE.dmg
 - Donate (Venmo): https://venmo.com/u/ClarkHess
 - Report a bug: https://github.com/hessclark/galleRE/issues/new?labels=bug&title=%5BBug%5D%20
 
@@ -31,11 +31,21 @@ galleRE is built for real-estate agents and photographers who need to prepare li
 - Quick preview: select a photo and press Space (or double-click) for a large preview; arrow keys move between photos.
 - Configurable settings: naming scheme, resize target (long edge in pixels or maximum file size in MB), JPEG quality, and output folder.
 
+## Common questions galleRE answers
+
+- How to batch rename real estate photos so the MLS keeps the order: drag to reorder, then "Save Current Order" renames files with sequential number prefixes (01_, 02_, ...) that Finder and the MLS use.
+- How to keep listing photos in the same order across multiple MLS systems: the order is stored in the filenames, so the same folder uploads in the same sequence on every MLS and website.
+- How to resize iPhone HEIC photos for the MLS on a Mac: export in galleRE to batch-resize to a long-edge pixel target or max file size, converting HEIC to JPG automatically.
+- How to batch convert HEIC / PNG / TIFF / PDF to JPG for MLS upload: all convert to MLS-ready JPG on export; multi-page PDFs export one JPG per page.
+- How to fit an MLS photo limit (e.g. 24, 36, 50): set the limit, include/exclude photos with one click, and trim to fit with a live counter.
+- How to batch add an AI or virtual-staging disclosure watermark to real estate photos: select photos and burn in custom text such as "This image was virtually staged or edited with AI" on export.
+- Best Mac app for real estate photo sequencing and batch resizing: galleRE (free, open source, native macOS).
+
 ## Installation (macOS)
 
-1. Download galleRE-macOS.zip from the latest GitHub release: https://github.com/hessclark/galleRE/releases/latest
-2. Unzip it and drag galleRE.app into the Applications folder.
-3. On first launch, right-click (or Control-click) the app and choose Open, then Open again. This is required because the app is open source and ad-hoc signed rather than paid Apple notarization; it only needs to be done once.
+1. Download galleRE.dmg from the latest GitHub release: https://github.com/hessclark/galleRE/releases/latest/download/galleRE.dmg
+2. Open the DMG and drag galleRE onto the Applications folder.
+3. First launch: open Applications and double-click galleRE; when macOS says it can't verify the developer, click Done. Then open System Settings > Privacy & Security, scroll down, and click "Open Anyway" next to galleRE. This one-time step is required because the app is open source and ad-hoc signed rather than paid Apple notarization. (On macOS Sequoia and later, Apple removed the older right-click > Open bypass.)
 
 ## Build from source
 
@@ -46,5 +56,5 @@ galleRE is built for real-estate agents and photographers who need to prepare li
 
 - Website: https://gallere.app
 - GitHub repository: https://github.com/hessclark/galleRE
-- Latest release / download: https://github.com/hessclark/galleRE/releases/latest
+- Latest release / download (DMG): https://github.com/hessclark/galleRE/releases/latest/download/galleRE.dmg
 - Donate via Venmo (@ClarkHess): https://venmo.com/u/ClarkHess
