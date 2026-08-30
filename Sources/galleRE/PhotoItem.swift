@@ -30,28 +30,40 @@ final class PhotoItem: Identifiable, ObservableObject {
 
     var isPDF: Bool { url.pathExtension.lowercased() == "pdf" }
 
+    /// Bounded queue so reading metadata for a large folder stays off the
+    /// main thread and doesn't block folder navigation.
+    private static let metaQueue: OperationQueue = {
+        let q = OperationQueue()
+        q.maxConcurrentOperationCount = 4
+        q.qualityOfService = .userInitiated
+        return q
+    }()
+
+    /// Reads file size and pixel dimensions off the main thread, then publishes.
     func loadMetadata() {
-        if let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
-           let size = attrs[.size] as? Int {
-            fileSizeBytes = size
-        }
-        if isPDF {
-            if let size = ImageProcessor.pdfPageSize(url) {
-                pixelSize = size
-            }
-            return
-        }
-        autoreleasepool {
-            if let src = CGImageSourceCreateWithURL(url as CFURL, nil),
-               let props = CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as? [CFString: Any] {
-                let w = (props[kCGImagePropertyPixelWidth] as? CGFloat) ?? 0
-                let h = (props[kCGImagePropertyPixelHeight] as? CGFloat) ?? 0
-                // account for EXIF orientation (5-8 swap dimensions)
-                let orientation = (props[kCGImagePropertyOrientation] as? Int) ?? 1
-                if orientation >= 5 {
-                    pixelSize = CGSize(width: h, height: w)
-                } else {
-                    pixelSize = CGSize(width: w, height: h)
+        let url = self.url
+        let pdf = isPDF
+        PhotoItem.metaQueue.addOperation { [weak self] in
+            autoreleasepool {
+                var size = 0
+                if let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
+                   let s = attrs[.size] as? Int { size = s }
+
+                var px = CGSize.zero
+                if pdf {
+                    if let s = ImageProcessor.pdfPageSize(url) { px = s }
+                } else if let src = CGImageSourceCreateWithURL(url as CFURL, nil),
+                          let props = CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as? [CFString: Any] {
+                    let w = (props[kCGImagePropertyPixelWidth] as? CGFloat) ?? 0
+                    let h = (props[kCGImagePropertyPixelHeight] as? CGFloat) ?? 0
+                    let orientation = (props[kCGImagePropertyOrientation] as? Int) ?? 1  // 5–8 swap dims
+                    px = orientation >= 5 ? CGSize(width: h, height: w) : CGSize(width: w, height: h)
+                }
+
+                let fsize = size, psize = px
+                DispatchQueue.main.async {
+                    self?.fileSizeBytes = fsize
+                    self?.pixelSize = psize
                 }
             }
         }

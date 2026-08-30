@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var settings = AppSettings.shared
+    @EnvironmentObject var clients: ClientsStore
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -15,6 +16,32 @@ struct SettingsView: View {
             Divider()
 
             Form {
+                Section("Clients") {
+                    LabeledContent("Clients folder") {
+                        HStack(spacing: 8) {
+                            Text(clients.rootURL?.path ?? "Not set")
+                                .foregroundStyle(clients.rootURL == nil ? .secondary : .primary)
+                                .lineLimit(1).truncationMode(.middle)
+                            Button("Choose…") { choose { clients.setRoot($0) } }
+                        }
+                    }
+                    LabeledContent("Archive folder") {
+                        HStack(spacing: 8) {
+                            Text(clients.usingCustomArchive
+                                 ? (clients.archiveURL?.path ?? "")
+                                 : "Default (a “\(ClientsStore.archiveFolderName)” folder inside Clients)")
+                                .foregroundStyle(clients.usingCustomArchive ? .primary : .secondary)
+                                .lineLimit(1).truncationMode(.middle)
+                            Button("Choose…") { choose { clients.setArchive($0) } }
+                            if clients.usingCustomArchive {
+                                Button("Reset") { clients.resetArchive() }
+                            }
+                        }
+                    }
+                    Text("Point galleRE at the folder that holds your listing-client folders. Archiving a client moves its folder into the archive folder.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+
                 Section("Naming") {
                     Picker("Scheme", selection: Binding(
                         get: { settings.namingScheme },
@@ -110,6 +137,16 @@ struct SettingsView: View {
             .formStyle(.grouped)
         }
         .frame(width: 460, height: 560)
+    }
+
+    private func choose(_ handler: (URL) -> Void) {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.canCreateDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Choose"
+        if panel.runModal() == .OK, let url = panel.url { handler(url) }
     }
 
     private var previewName: String {

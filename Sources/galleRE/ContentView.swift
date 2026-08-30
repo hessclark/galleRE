@@ -41,7 +41,7 @@ struct ContentView: View {
         }
         .onAppear { clients.refresh() }
         .sheet(isPresented: $showSettings) {
-            SettingsView().environmentObject(store)
+            SettingsView().environmentObject(store).environmentObject(clients)
         }
         .sheet(isPresented: $showHelp) {
             HelpView()
