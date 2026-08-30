@@ -9,8 +9,8 @@ A native macOS app: reorder by drag-and-drop, rename to lock in the order, batch
 ![Platform: macOS only](https://img.shields.io/badge/platform-macOS%2014%2B-blue)
 ![Universal: Apple Silicon + Intel](https://img.shields.io/badge/universal-Apple%20Silicon%20%2B%20Intel-lightgrey)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
-[![Downloads](https://img.shields.io/github/downloads/hessclark/galleRE/total?label=downloads&color=6c52e2)](https://github.com/hessclark/galleRE/releases)
-[![Latest release](https://img.shields.io/github/v/release/hessclark/galleRE?label=latest&color=6c52e2)](https://github.com/hessclark/galleRE/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/hessclark/galleRE/total?label=downloads&color=6c52e2&cacheSeconds=1800)](https://github.com/hessclark/galleRE/releases)
+[![Latest release](https://img.shields.io/github/v/release/hessclark/galleRE?label=latest&color=6c52e2&cacheSeconds=1800)](https://github.com/hessclark/galleRE/releases/latest)
 
 > 🍎 **macOS only.** galleRE is a native Mac app — it does not run on Windows, Linux, iPhone, or iPad.
 
