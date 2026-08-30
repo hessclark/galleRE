@@ -25,6 +25,8 @@ struct ContentView: View {
     @AppStorage("launchCount") private var launchCount = 0
     @AppStorage("photoViewMode") private var viewModeRaw = PhotoViewMode.grid.rawValue
     private var viewMode: PhotoViewMode { PhotoViewMode(rawValue: viewModeRaw) ?? .grid }
+    @StateObject private var updateChecker = UpdateChecker()
+    @AppStorage("dismissedUpdateVersion") private var dismissedUpdateVersion = ""
     static var launchCounted = false   // ensure we count once per process launch
 
     private var columns: [GridItem] {
@@ -43,7 +45,10 @@ struct ContentView: View {
         .onChange(of: selectedClient) { _, url in
             if let url { store.openFolder(url) }
         }
-        .onAppear { clients.refresh() }
+        .onAppear {
+            clients.refresh()
+            updateChecker.check()
+        }
         .sheet(isPresented: $showSettings) {
             SettingsView().environmentObject(store).environmentObject(clients)
         }
@@ -88,12 +93,34 @@ struct ContentView: View {
 
     private var mainContent: some View {
         VStack(spacing: 0) {
+            if let v = updateChecker.latestVersion, v != dismissedUpdateVersion {
+                updateBanner(v)
+            }
             toolbar
             Divider()
             content
             Divider()
             statusBar
         }
+    }
+
+    private func updateBanner(_ version: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "arrow.down.circle.fill").foregroundStyle(.white)
+            Text("galleRE \(version) is available.")
+                .foregroundStyle(.white).fontWeight(.medium)
+            Spacer()
+            Button("What's New") { NSWorkspace.shared.open(updateChecker.releasesURL) }
+                .buttonStyle(.plain).foregroundStyle(.white.opacity(0.9)).underline()
+            Button("Download") { NSWorkspace.shared.open(updateChecker.downloadURL) }
+                .buttonStyle(.borderedProminent).tint(.white).foregroundStyle(Brand.accent)
+            Button { dismissedUpdateVersion = version } label: {
+                Image(systemName: "xmark").foregroundStyle(.white.opacity(0.85))
+            }
+            .buttonStyle(.plain).help("Dismiss until the next version")
+        }
+        .padding(.horizontal, 14).padding(.vertical, 9)
+        .background(Brand.gradient)
     }
 
     private func openPreview(_ id: UUID?) {

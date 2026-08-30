@@ -22,6 +22,9 @@ struct galleREApp: App {
                 Button("About galleRE") {
                     NotificationCenter.default.post(name: .showAbout, object: nil)
                 }
+                Button("Check for Updates…") {
+                    NSWorkspace.shared.open(URL(string: "https://github.com/hessclark/galleRE/releases/latest")!)
+                }
             }
             CommandGroup(replacing: .newItem) {}
             CommandGroup(replacing: .help) {
