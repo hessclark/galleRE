@@ -222,62 +222,113 @@ struct ContentView: View {
     private var content: some View {
         if store.folderURL == nil {
             emptyState
-        } else if store.items.isEmpty {
-            VStack(spacing: 8) {
-                Image(systemName: "photo.on.rectangle.angled").font(.system(size: 40)).foregroundStyle(.secondary)
-                Text("No supported photos in this folder").foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
           VStack(spacing: 0) {
+            if store.navigationRoot != nil { breadcrumbBar }
             if !selection.isEmpty {
                 selectionBar
             } else if !dragHintDismissed && store.items.count > 1 {
                 dragHintBanner
             }
-            ScrollView {
-                LazyVGrid(columns: columns, spacing: 12) {
-                    ForEach(Array(store.items.enumerated()), id: \.element.id) { index, item in
-                        PhotoCell(item: item,
-                                  includedRank: includedRanks[item.id],
-                                  isOverLimit: isOverLimit(item),
-                                  isSelected: selection.contains(item.id),
-                                  store: store)
-                            .opacity(draggingID == item.id ? 0.35 : 1)
-                            .onTapGesture(count: 2) { openPreview(item.id) }
-                            .highPriorityGesture(TapGesture().modifiers(.command).onEnded { toggle(item.id) })
-                            .highPriorityGesture(TapGesture().modifiers(.shift).onEnded { selectRange(to: item.id) })
-                            .onTapGesture { selectSingle(item.id) }
-                            .onDrag {
-                                draggingID = item.id
-                                if !selection.contains(item.id) { selectSingle(item.id) }
-                                return NSItemProvider(object: item.id.uuidString as NSString)
-                            }
-                            .onDrop(of: [UTType.text], delegate: ReorderDropDelegate(
-                                item: item, store: store, draggingID: $draggingID))
-                    }
+
+            if store.items.isEmpty && store.subfolders.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "photo.on.rectangle.angled").font(.system(size: 40)).foregroundStyle(.secondary)
+                    Text("No photos or subfolders here").foregroundStyle(.secondary)
                 }
-                .padding(14)
-            }
-            .focusable()
-            .focusEffectDisabled()
-            .onKeyPress(.space) {
-                openPreview(anchorID ?? store.items.first?.id)
-                return .handled
-            }
-            .onKeyPress(.leftArrow)  { moveSelection(-1); return .handled }
-            .onKeyPress(.rightArrow) { moveSelection(1);  return .handled }
-            .onKeyPress(.return) {
-                openPreview(anchorID ?? store.items.first?.id)
-                return .handled
-            }
-            .onKeyPress(.escape) { clearSelection(); return .handled }
-            .onKeyPress(keys: ["a"]) { press in
-                if press.modifiers.contains(.command) { selectAll(); return .handled }
-                return .ignored
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                photoScroll
             }
           }
         }
+    }
+
+    private var photoScroll: some View {
+        ScrollView {
+            if !store.subfolders.isEmpty {
+                foldersGrid
+                if !store.items.isEmpty {
+                    HStack { Text("Photos").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary); Spacer() }
+                        .padding(.horizontal, 16).padding(.top, 4)
+                }
+            }
+            LazyVGrid(columns: columns, spacing: 12) {
+                ForEach(Array(store.items.enumerated()), id: \.element.id) { index, item in
+                    PhotoCell(item: item,
+                              includedRank: includedRanks[item.id],
+                              isOverLimit: isOverLimit(item),
+                              isSelected: selection.contains(item.id),
+                              store: store)
+                        .opacity(draggingID == item.id ? 0.35 : 1)
+                        .onTapGesture(count: 2) { openPreview(item.id) }
+                        .highPriorityGesture(TapGesture().modifiers(.command).onEnded { toggle(item.id) })
+                        .highPriorityGesture(TapGesture().modifiers(.shift).onEnded { selectRange(to: item.id) })
+                        .onTapGesture { selectSingle(item.id) }
+                        .onDrag {
+                            draggingID = item.id
+                            if !selection.contains(item.id) { selectSingle(item.id) }
+                            return NSItemProvider(object: item.id.uuidString as NSString)
+                        }
+                        .onDrop(of: [UTType.text], delegate: ReorderDropDelegate(
+                            item: item, store: store, draggingID: $draggingID))
+                }
+            }
+            .padding(14)
+        }
+        .focusable()
+        .focusEffectDisabled()
+        .onKeyPress(.space) {
+            openPreview(anchorID ?? store.items.first?.id)
+            return .handled
+        }
+        .onKeyPress(.leftArrow)  { moveSelection(-1); return .handled }
+        .onKeyPress(.rightArrow) { moveSelection(1);  return .handled }
+        .onKeyPress(.return) {
+            openPreview(anchorID ?? store.items.first?.id)
+            return .handled
+        }
+        .onKeyPress(.escape) { clearSelection(); return .handled }
+        .onKeyPress(keys: ["a"]) { press in
+            if press.modifiers.contains(.command) { selectAll(); return .handled }
+            return .ignored
+        }
+    }
+
+    private var foldersGrid: some View {
+        LazyVGrid(columns: columns, spacing: 12) {
+            ForEach(store.subfolders, id: \.self) { url in
+                FolderCell(url: url, photoCount: store.photoCount(in: url))
+                    .onTapGesture { clearSelection(); store.enterFolder(url) }
+            }
+        }
+        .padding(.horizontal, 14).padding(.top, 14)
+    }
+
+    private var breadcrumbBar: some View {
+        HStack(spacing: 4) {
+            Button {
+                if let root = store.navigationRoot { clearSelection(); store.navigate(to: root) }
+            } label: { Image(systemName: "house") }
+            .buttonStyle(.borderless)
+            .disabled(store.folderURL == store.navigationRoot)
+            .help("Back to client root")
+
+            ForEach(Array(store.breadcrumb.enumerated()), id: \.element) { idx, url in
+                if idx > 0 { Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.tertiary) }
+                Button(url.lastPathComponent) {
+                    clearSelection(); store.navigate(to: url)
+                }
+                .buttonStyle(.plain)
+                .fontWeight(url == store.folderURL ? .semibold : .regular)
+                .foregroundStyle(url == store.folderURL ? Color.primary : Color.secondary)
+            }
+            Spacer()
+        }
+        .font(.callout)
+        .padding(.horizontal, 12).padding(.vertical, 6)
+        .background(Brand.barWash)
+        .overlay(alignment: .bottom) { Divider() }
     }
 
     // MARK: Selection / bulk-action bar
@@ -544,6 +595,37 @@ struct PhotoCell: View {
         }
         .buttonStyle(.plain)
         .help(tip)
+    }
+}
+
+// MARK: - Folder cell (navigable subfolder)
+
+struct FolderCell: View {
+    let url: URL
+    let photoCount: Int
+    @State private var hovering = false
+
+    var body: some View {
+        VStack(spacing: 4) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8).fill(Brand.violet.opacity(hovering ? 0.18 : 0.10))
+                Image(systemName: "folder.fill")
+                    .font(.system(size: 44))
+                    .foregroundStyle(Brand.accent)
+            }
+            .frame(maxWidth: .infinity)
+            .aspectRatio(4.0/3.0, contentMode: .fit)
+
+            Text(url.lastPathComponent)
+                .font(.caption2).lineLimit(1).truncationMode(.middle)
+            Text(photoCount > 0 ? "\(photoCount) photo\(photoCount == 1 ? "" : "s")" : "Open")
+                .font(.caption2).foregroundStyle(.secondary)
+        }
+        .padding(6)
+        .background(RoundedRectangle(cornerRadius: 10).fill(.background.secondary))
+        .contentShape(Rectangle())
+        .onHover { hovering = $0 }
+        .help("Open “\(url.lastPathComponent)”")
     }
 }
 

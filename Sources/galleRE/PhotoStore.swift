@@ -5,31 +5,76 @@ import UniformTypeIdentifiers
 final class PhotoStore: ObservableObject {
     @Published var folderURL: URL?
     @Published var items: [PhotoItem] = []
+    @Published var subfolders: [URL] = []
+    @Published var navigationRoot: URL?   // the top-level folder opened; breadcrumb stops here
     @Published var isBusy = false
     @Published var statusMessage = ""
 
     private let settings = AppSettings.shared
 
-    // MARK: - Loading
+    // MARK: - Loading & navigation
 
+    /// Open a top-level folder (a client or an ad-hoc pick). Resets the breadcrumb root here.
     func openFolder(_ url: URL) {
+        navigationRoot = url
         folderURL = url
         reload()
+    }
+
+    /// Drill into a subfolder, keeping the current breadcrumb root.
+    func enterFolder(_ url: URL) {
+        folderURL = url
+        reload()
+    }
+
+    /// Jump to any folder between the root and the current one (breadcrumb click).
+    func navigate(to url: URL) {
+        folderURL = url
+        reload()
+    }
+
+    /// Breadcrumb trail from navigationRoot down to the current folder.
+    var breadcrumb: [URL] {
+        guard let root = navigationRoot, let current = folderURL else { return [] }
+        var trail: [URL] = []
+        var cur: URL? = current
+        while let c = cur, c.path.hasPrefix(root.path) {
+            trail.insert(c, at: 0)
+            if c.path == root.path { break }
+            cur = c.deletingLastPathComponent()
+        }
+        return trail
     }
 
     func reload() {
         guard let folderURL else { return }
         let fm = FileManager.default
         let urls = (try? fm.contentsOfDirectory(at: folderURL,
-                                                includingPropertiesForKeys: nil,
+                                                includingPropertiesForKeys: [.isDirectoryKey],
                                                 options: [.skipsHiddenFiles])) ?? []
+        // Subfolders (excluding the export subfolder), so nested photo folders are navigable.
+        subfolders = urls
+            .filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true }
+            .filter { $0.lastPathComponent != settings.exportFolderName }
+            .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
+
         let photos = urls
             .filter { PhotoItem.supportedExtensions.contains($0.pathExtension.lowercased()) }
             .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
             .map { PhotoItem(url: $0) }
         items = photos
         for p in photos { p.loadThumbnail() }
-        statusMessage = "\(photos.count) photo\(photos.count == 1 ? "" : "s")"
+
+        let photoPart = "\(photos.count) photo\(photos.count == 1 ? "" : "s")"
+        let folderPart = subfolders.isEmpty ? "" : " · \(subfolders.count) folder\(subfolders.count == 1 ? "" : "s")"
+        statusMessage = photoPart + folderPart
+    }
+
+    /// Count of supported photos directly inside a folder (for folder cards).
+    func photoCount(in url: URL) -> Int {
+        let urls = (try? FileManager.default.contentsOfDirectory(
+            at: url, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])) ?? []
+        return urls.filter { PhotoItem.supportedExtensions.contains($0.pathExtension.lowercased()) }.count
     }
 
     // MARK: - Reordering
