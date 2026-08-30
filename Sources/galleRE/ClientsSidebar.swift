@@ -32,7 +32,7 @@ struct ClientsSidebar: View {
             }
             Button("Cancel", role: .cancel) { pendingArchive = nil }
         } message: {
-            Text("This moves the folder into the “\(ClientsStore.archiveFolderName)” folder. You can restore it anytime.")
+            Text("This moves the folder into “\(clients.archiveName)”. You can restore it anytime.")
         }
     }
 
@@ -44,8 +44,18 @@ struct ClientsSidebar: View {
             if clients.rootURL != nil {
                 Button { clients.refresh() } label: { Image(systemName: "arrow.clockwise") }
                     .buttonStyle(.borderless).help("Refresh")
-                Button { chooseRoot() } label: { Image(systemName: "folder.badge.gearshape") }
-                    .buttonStyle(.borderless).help("Change clients folder")
+                Menu {
+                    Button("Change Clients Folder…") { chooseRoot() }
+                    Divider()
+                    Button("Choose Archive Folder…") { chooseArchive() }
+                    if clients.usingCustomArchive {
+                        Button("Reset Archive to Default") { clients.resetArchive() }
+                    }
+                } label: {
+                    Image(systemName: "folder.badge.gearshape")
+                }
+                .menuStyle(.borderlessButton).fixedSize()
+                .help("Folder options")
             }
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
@@ -94,11 +104,7 @@ struct ClientsSidebar: View {
         HStack(spacing: 8) {
             Image(systemName: archived ? "archivebox" : "house")
                 .foregroundStyle(archived ? .secondary : Color.brand)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(c.name).lineLimit(1)
-                Text("\(c.photoCount) photo\(c.photoCount == 1 ? "" : "s")")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
+            Text(c.name).lineLimit(1)
         }
         .contextMenu {
             if archived {
@@ -126,6 +132,19 @@ struct ClientsSidebar: View {
         panel.message = "Choose the folder that contains your listing-client folders"
         if panel.runModal() == .OK, let url = panel.url {
             clients.setRoot(url)
+        }
+    }
+
+    private func chooseArchive() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.canCreateDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Use as Archive"
+        panel.message = "Choose the folder to move archived clients into"
+        if panel.runModal() == .OK, let url = panel.url {
+            clients.setArchive(url)
         }
     }
 }
