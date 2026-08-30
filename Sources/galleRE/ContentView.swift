@@ -1,6 +1,8 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+enum PhotoViewMode: String { case grid, list }
+
 struct ContentView: View {
     @EnvironmentObject var store: PhotoStore
     @EnvironmentObject var clients: ClientsStore
@@ -21,6 +23,8 @@ struct ContentView: View {
     @AppStorage("hasSeenHelp") private var hasSeenHelp = false
     @AppStorage("dragHintDismissed") private var dragHintDismissed = false
     @AppStorage("launchCount") private var launchCount = 0
+    @AppStorage("photoViewMode") private var viewModeRaw = PhotoViewMode.grid.rawValue
+    private var viewMode: PhotoViewMode { PhotoViewMode(rawValue: viewModeRaw) ?? .grid }
     static var launchCounted = false   // ensure we count once per process launch
 
     private var columns: [GridItem] {
@@ -193,9 +197,20 @@ struct ContentView: View {
             }
 
             if store.folderURL != nil {
-                Slider(value: $thumbScale, in: 100...300) {}
-                    .frame(width: 110)
-                    .help("Thumbnail size")
+                Picker("View", selection: Binding(
+                    get: { viewMode },
+                    set: { viewModeRaw = $0.rawValue })) {
+                    Image(systemName: "square.grid.2x2").tag(PhotoViewMode.grid)
+                    Image(systemName: "list.bullet").tag(PhotoViewMode.list)
+                }
+                .pickerStyle(.segmented).labelsHidden().fixedSize()
+                .help("Grid or list view")
+
+                if viewMode == .grid {
+                    Slider(value: $thumbScale, in: 100...300) {}
+                        .frame(width: 100)
+                        .help("Thumbnail size")
+                }
             }
 
             Button {
@@ -247,34 +262,13 @@ struct ContentView: View {
     private var photoScroll: some View {
         ScrollView {
             if !store.subfolders.isEmpty {
-                foldersGrid
+                foldersView
                 if !store.items.isEmpty {
                     HStack { Text("Photos").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary); Spacer() }
                         .padding(.horizontal, 16).padding(.top, 4)
                 }
             }
-            LazyVGrid(columns: columns, spacing: 12) {
-                ForEach(Array(store.items.enumerated()), id: \.element.id) { index, item in
-                    PhotoCell(item: item,
-                              includedRank: includedRanks[item.id],
-                              isOverLimit: isOverLimit(item),
-                              isSelected: selection.contains(item.id),
-                              store: store)
-                        .opacity(draggingID == item.id ? 0.35 : 1)
-                        .onTapGesture(count: 2) { openPreview(item.id) }
-                        .highPriorityGesture(TapGesture().modifiers(.command).onEnded { toggle(item.id) })
-                        .highPriorityGesture(TapGesture().modifiers(.shift).onEnded { selectRange(to: item.id) })
-                        .onTapGesture { selectSingle(item.id) }
-                        .onDrag {
-                            draggingID = item.id
-                            if !selection.contains(item.id) { selectSingle(item.id) }
-                            return NSItemProvider(object: item.id.uuidString as NSString)
-                        }
-                        .onDrop(of: [UTType.text], delegate: ReorderDropDelegate(
-                            item: item, store: store, draggingID: $draggingID))
-                }
-            }
-            .padding(14)
+            if viewMode == .grid { photosGrid } else { photosList }
         }
         .focusable()
         .focusEffectDisabled()
@@ -295,14 +289,73 @@ struct ContentView: View {
         }
     }
 
-    private var foldersGrid: some View {
+    // Shared per-photo interactions (selection, preview, drag-reorder) for grid or list.
+    @ViewBuilder
+    private func itemInteractions<V: View>(_ base: V, item: PhotoItem) -> some View {
+        base
+            .opacity(draggingID == item.id ? 0.35 : 1)
+            .onTapGesture(count: 2) { openPreview(item.id) }
+            .highPriorityGesture(TapGesture().modifiers(.command).onEnded { toggle(item.id) })
+            .highPriorityGesture(TapGesture().modifiers(.shift).onEnded { selectRange(to: item.id) })
+            .onTapGesture { selectSingle(item.id) }
+            .onDrag {
+                draggingID = item.id
+                if !selection.contains(item.id) { selectSingle(item.id) }
+                return NSItemProvider(object: item.id.uuidString as NSString)
+            }
+            .onDrop(of: [UTType.text], delegate: ReorderDropDelegate(
+                item: item, store: store, draggingID: $draggingID))
+    }
+
+    private var photosGrid: some View {
         LazyVGrid(columns: columns, spacing: 12) {
-            ForEach(store.subfolders, id: \.self) { url in
-                FolderCell(url: url, photoCount: store.photoCount(in: url))
-                    .onTapGesture { clearSelection(); store.enterFolder(url) }
+            ForEach(Array(store.items.enumerated()), id: \.element.id) { _, item in
+                itemInteractions(
+                    PhotoCell(item: item,
+                              includedRank: includedRanks[item.id],
+                              isOverLimit: isOverLimit(item),
+                              isSelected: selection.contains(item.id),
+                              store: store),
+                    item: item)
             }
         }
-        .padding(.horizontal, 14).padding(.top, 14)
+        .padding(14)
+    }
+
+    private var photosList: some View {
+        LazyVStack(spacing: 2) {
+            ForEach(Array(store.items.enumerated()), id: \.element.id) { _, item in
+                itemInteractions(
+                    PhotoRow(item: item,
+                             includedRank: includedRanks[item.id],
+                             isOverLimit: isOverLimit(item),
+                             isSelected: selection.contains(item.id),
+                             store: store),
+                    item: item)
+            }
+        }
+        .padding(.horizontal, 12).padding(.vertical, 8)
+    }
+
+    @ViewBuilder
+    private var foldersView: some View {
+        if viewMode == .grid {
+            LazyVGrid(columns: columns, spacing: 12) {
+                ForEach(store.subfolders, id: \.self) { url in
+                    FolderCell(url: url, photoCount: store.photoCount(in: url))
+                        .onTapGesture { clearSelection(); store.enterFolder(url) }
+                }
+            }
+            .padding(.horizontal, 14).padding(.top, 14)
+        } else {
+            LazyVStack(spacing: 2) {
+                ForEach(store.subfolders, id: \.self) { url in
+                    FolderRow(url: url)
+                        .onTapGesture { clearSelection(); store.enterFolder(url) }
+                }
+            }
+            .padding(.horizontal, 12).padding(.top, 10)
+        }
     }
 
     private var breadcrumbBar: some View {
@@ -595,6 +648,85 @@ struct PhotoCell: View {
         }
         .buttonStyle(.plain)
         .help(tip)
+    }
+}
+
+// MARK: - Photo row (list view)
+
+struct PhotoRow: View {
+    @ObservedObject var item: PhotoItem
+    var includedRank: Int?
+    var isOverLimit: Bool = false
+    var isSelected: Bool = false
+    let store: PhotoStore
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Group {
+                if let r = includedRank {
+                    Text("\(r)").font(.caption.bold().monospacedDigit())
+                        .foregroundStyle(isOverLimit ? .orange : .secondary)
+                } else {
+                    Image(systemName: "eye.slash.fill").font(.caption2).foregroundStyle(.secondary)
+                }
+            }
+            .frame(width: 24)
+
+            Group {
+                if let img = item.thumbnail {
+                    Image(nsImage: img).resizable().aspectRatio(contentMode: .fill)
+                } else {
+                    Rectangle().fill(.quaternary)
+                }
+            }
+            .frame(width: 62, height: 44)
+            .clipShape(RoundedRectangle(cornerRadius: 5))
+            .saturation(item.included ? 1 : 0)
+            .opacity(item.included ? 1 : 0.5)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(item.fileName).lineLimit(1).truncationMode(.middle)
+                Text([item.dimensionString, item.fileSizeString].filter { !$0.isEmpty }.joined(separator: "  ·  "))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            if item.watermarked {
+                Image(systemName: "textformat.size").font(.caption).foregroundStyle(.blue).help("Watermarked")
+            }
+            Button { store.toggleIncluded(item) } label: {
+                Image(systemName: item.included ? "eye.fill" : "eye.slash.fill")
+            }
+            .buttonStyle(.borderless).help(item.included ? "Exclude from MLS set" : "Include in MLS set")
+            Button { store.toggleWatermark(item) } label: {
+                Image(systemName: item.watermarked ? "textformat.size" : "textformat")
+                    .foregroundStyle(item.watermarked ? Color.blue : Color.secondary)
+            }
+            .buttonStyle(.borderless).help(item.watermarked ? "Remove watermark" : "Add watermark")
+        }
+        .padding(.horizontal, 8).padding(.vertical, 5)
+        .background(RoundedRectangle(cornerRadius: 8).fill(isSelected ? Color.brand.opacity(0.18) : .clear))
+        .overlay(RoundedRectangle(cornerRadius: 8)
+            .strokeBorder(isOverLimit ? Color.orange : .clear, lineWidth: isOverLimit ? 2 : 0))
+        .contentShape(Rectangle())
+    }
+}
+
+// MARK: - Folder row (list view)
+
+struct FolderRow: View {
+    let url: URL
+    @State private var hovering = false
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "folder.fill").foregroundStyle(Color.brand).frame(width: 24)
+            Text(url.lastPathComponent).lineLimit(1)
+            Spacer()
+            Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 8).padding(.vertical, 8)
+        .background(RoundedRectangle(cornerRadius: 8).fill(hovering ? Brand.violet.opacity(0.10) : .clear))
+        .contentShape(Rectangle())
+        .onHover { hovering = $0 }
     }
 }
 
